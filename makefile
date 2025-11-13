@@ -27,7 +27,7 @@ clean: ## Remove containers and volumes
 	$(DOCKER_COMPOSE) down -v
 
 test: ## Run tests
-	$(DOCKER_COMPOSE) run --rm app go test ./...
+	go test ./tests/...
 
 restart: ## Restart services
 	$(DOCKER_COMPOSE) restart
