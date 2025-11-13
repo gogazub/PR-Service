@@ -7,12 +7,12 @@ import (
 
 func main(){
 
-
 	heatlzHandler := func(w http.ResponseWriter, r *http.Request){
+		fmt.Println("get a new request")
 		w.WriteHeader(http.StatusOK)
 		w.Header().Add("Content-type", "text/plain")
 		str := "Server is working!"
-		w.Write([]byte(str))
+		_,_ = w.Write([]byte(str))
 	}
 
 	http.HandleFunc("/healtz",heatlzHandler)

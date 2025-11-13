@@ -8,6 +8,8 @@ RUN go mod download
 COPY ./cmd ./
 COPY ./internal ./
 
+COPY ./tests ./
+
 RUN CGO_ENABLED=0 GOFLAGS="" go build -trimpath -ldflags "-s -w" -o /out/app ./cmd/main.go
 
 
