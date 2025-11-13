@@ -11,3 +11,13 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - ./migrations/0001_init.sql:/docker-entrypoint-initdb.d/0001_init.sql
+
+  app:
+    container_name: pr-service
+    build: .
+    environment:
+      - PORT=${HTTP_PORT}
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+    depends_on:
+      - db

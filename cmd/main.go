@@ -1,7 +1,25 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+)
 
 func main(){
-	fmt.Println("Hello!")
+
+
+	heatlzHandler := func(w http.ResponseWriter, r *http.Request){
+		w.WriteHeader(http.StatusOK)
+		w.Header().Add("Content-type", "text/plain")
+		str := "Server is working!"
+		w.Write([]byte(str))
+	}
+
+	http.HandleFunc("/healtz",heatlzHandler)
+
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil{
+		fmt.Println(err.Error())
+	}
+
 }
