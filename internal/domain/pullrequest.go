@@ -12,15 +12,17 @@ const (
 type PullRequest struct {
 	PullRequestID PullRequestID
 	Name          string
+	Author        UserID
 	Status        PullRequestStatus
 	Reviewers     [2]UserID
 }
 
 // NewPullRequest returns new PullRequest.
-func NewPullRequest(id string, name string, status PullRequestStatus, reviewers []UserID) *PullRequest {
+func NewPullRequest(id string, name string, author UserID, status PullRequestStatus, reviewers []UserID) *PullRequest {
 	pr := &PullRequest{
 		PullRequestID: PullRequestID(id),
 		Name:          name,
+		Author:        author,
 		Status:        status,
 	}
 
