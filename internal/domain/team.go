@@ -1,5 +1,7 @@
 package domain
 
+type TeamID string
+
 type Team struct {
 	TeamID  string
 	Name    string
