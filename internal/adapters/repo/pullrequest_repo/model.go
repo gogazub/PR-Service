@@ -8,7 +8,7 @@ import (
 type PullRequestModel struct {
 	PRID     string                   `db:"pr_id"`
 	Name     string                   `db:"name"`
-	AuthorID *string                  `db:"author_id"`
+	AuthorID string                   `db:"author_id"`
 	Status   domain.PullRequestStatus `db:"status"`
 
 	CreatedAt time.Time  `db:"created_at"`
