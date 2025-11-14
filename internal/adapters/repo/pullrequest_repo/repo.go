@@ -14,26 +14,38 @@ func NewPullRequestRepo(db *sql.DB) *PullRequestRepo {
 	return &PullRequestRepo{db: db}
 }
 
-func (r *PullRequestRepo) GetByID(ctx context.Context, id domain.PullRequestID) (*domain.PullRequest, error) {
-	return nil, nil
-}
-
+// Create saves new pull request
 func (r *PullRequestRepo) Create(ctx context.Context, pr *domain.PullRequest) error {
+	// TODO: implement
 	return nil
 }
 
-func (r *PullRequestRepo) Update(ctx context.Context, pr *domain.PullRequest) error {
-	return nil
-}
-
-func (r *PullRequestRepo) GetByAuthorID(ctx context.Context, authorID domain.UserID) ([]*domain.PullRequest, error) {
+// GetByID returns pull request by ID
+func (r *PullRequestRepo) GetByID(ctx context.Context, prID domain.PullRequestID) (*domain.PullRequest, error) {
+	// TODO: implement
 	return nil, nil
 }
 
-func (r *PullRequestRepo) UpdateStatus(ctx context.Context, id domain.PullRequestID, status domain.PullRequestStatus) error {
+// UpdateStatus changes pull request status
+func (r *PullRequestRepo) UpdateStatus(ctx context.Context, status domain.PullRequestStatus) error {
+	// TODO: implement
 	return nil
 }
 
-func (r *PullRequestRepo) GetByStatus(ctx context.Context, status domain.PullRequestStatus) ([]*domain.PullRequest, error) {
+// AssignReviewers sets reviewers for pull request
+func (r *PullRequestRepo) AssignReviewers(ctx context.Context, prID domain.PullRequestID, reviewers []domain.UserID) error {
+	// TODO: implement
+	return nil
+}
+
+// ReassignReviewers replaces one reviewer with another
+func (r *PullRequestRepo) ReassignReviewers(ctx context.Context, prID domain.PullRequestID, oldReviewerID, newReviewerID domain.UserID) error {
+	// TODO: implement
+	return nil
+}
+
+// ListByUserID returns all user's pull requests
+func (r *PullRequestRepo) ListByUserID(ctx context.Context, userID domain.UserID) ([]*domain.PullRequest, error) {
+	// TODO: implement
 	return nil, nil
 }

@@ -9,11 +9,11 @@ import (
 // PullRequestRepo - contract for working with users in DB
 type PullRequestRepo interface {
 
-	// GetByID returns pull request by ID
-	GetByID(ctx context.Context, prID domain.PullRequestID) (*domain.PullRequest, error)
-
 	// Create saves new pull request
 	Create(ctx context.Context, pr *domain.PullRequest) error
+
+	// GetByID returns pull request by ID
+	GetByID(ctx context.Context, prID domain.PullRequestID) (*domain.PullRequest, error)
 
 	// UpdateStatus changes pull request status
 	UpdateStatus(ctx context.Context, status domain.PullRequestStatus) error
