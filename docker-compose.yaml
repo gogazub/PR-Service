@@ -10,7 +10,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
-      - ./migrations/0001_init.sql:/docker-entrypoint-initdb.d/0001_init.sql
+      - ./internal/adapters/repo/migrations/0001_init.sql:/docker-entrypoint-initdb.d/0001_init.sql
 
   app:
     container_name: pr-service
