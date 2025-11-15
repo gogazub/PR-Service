@@ -1,15 +1,15 @@
 package pullrequestrepo
 
 import (
-	"PRService/internal/domain"
+	"PRService/internal/domain/pullrequest"
 	"time"
 )
 
 type PullRequestModel struct {
-	PRID     string                   `db:"pr_id"`
-	Name     string                   `db:"name"`
-	AuthorID string                   `db:"author_id"`
-	Status   domain.PullRequestStatus `db:"status"`
+	PRID     string             `db:"pr_id"`
+	Name     string             `db:"name"`
+	AuthorID string             `db:"author_id"`
+	Status   pullrequest.Status `db:"status"`
 
 	CreatedAt time.Time  `db:"created_at"`
 	UpdatedAt time.Time  `db:"updated_at"`

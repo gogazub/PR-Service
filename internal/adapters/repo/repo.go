@@ -7,18 +7,18 @@ import (
 )
 
 type Repository struct {
-	userRepo        userrepo.UserRepo
-	teamRepo        teamrepo.TeamRepo
-	pullRequestRepo pullrequestrepo.PullRequestRepo
+	userRepo        userrepo.Repo
+	teamRepo        teamrepo.Repo
+	pullRequestRepo pullrequestrepo.Repo
 }
 
-func (r *Repository) UserRepo() userrepo.UserRepo {
+func (r *Repository) UserRepo() userrepo.Repo {
 	return r.userRepo
 }
 
-func (r *Repository) TeamRepo() teamrepo.TeamRepo {
+func (r *Repository) TeamRepo() teamrepo.Repo {
 	return r.teamRepo
 }
-func (r *Repository) PullRequestRepo() pullrequestrepo.PullRequestRepo {
+func (r *Repository) PullRequestRepo() pullrequestrepo.Repo {
 	return r.pullRequestRepo
 }

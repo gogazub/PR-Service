@@ -1,51 +1,52 @@
 package pullrequestrepo
 
 import (
-	"PRService/internal/domain"
+	"PRService/internal/domain/pullrequest"
+	"PRService/internal/domain/user"
 	"context"
 	"database/sql"
 )
 
-type PullRequestRepo struct {
+type Repo struct {
 	db *sql.DB
 }
 
-func NewPullRequestRepo(db *sql.DB) *PullRequestRepo {
-	return &PullRequestRepo{db: db}
+func NewPullRequestRepo(db *sql.DB) *Repo {
+	return &Repo{db: db}
 }
 
-// Create saves new pull request
-func (r *PullRequestRepo) Create(ctx context.Context, pr *domain.PullRequest) error {
+// Save saves new pull request
+func (r *Repo) Save(ctx context.Context, pr *pullrequest.PullRequest) error {
 	// TODO: implement
 	return nil
 }
 
 // GetByID returns pull request by ID
-func (r *PullRequestRepo) GetByID(ctx context.Context, prID domain.PullRequestID) (*domain.PullRequest, error) {
+func (r *Repo) GetByID(ctx context.Context, prID pullrequest.ID) (*pullrequest.PullRequest, error) {
 	// TODO: implement
 	return nil, nil
 }
 
 // UpdateStatus changes pull request status
-func (r *PullRequestRepo) UpdateStatus(ctx context.Context, status domain.PullRequestStatus) error {
+func (r *Repo) UpdateStatus(ctx context.Context, prID pullrequest.ID, status pullrequest.Status) error {
 	// TODO: implement
 	return nil
 }
 
 // AssignReviewers sets reviewers for pull request
-func (r *PullRequestRepo) AssignReviewers(ctx context.Context, prID domain.PullRequestID, reviewers []domain.UserID) error {
+func (r *Repo) AssignReviewers(ctx context.Context, prID pullrequest.ID, reviewers []user.ID) error {
 	// TODO: implement
 	return nil
 }
 
 // ReassignReviewers replaces one reviewer with another
-func (r *PullRequestRepo) ReassignReviewers(ctx context.Context, prID domain.PullRequestID, oldReviewerID, newReviewerID domain.UserID) error {
+func (r *Repo) ReassignReviewers(ctx context.Context, prID pullrequest.ID, oldReviewerID, newReviewerID user.ID) error {
 	// TODO: implement
 	return nil
 }
 
 // ListByUserID returns all user's pull requests
-func (r *PullRequestRepo) ListByUserID(ctx context.Context, userID domain.UserID) ([]*domain.PullRequest, error) {
+func (r *Repo) ListByUserID(ctx context.Context, userID user.ID) ([]*pullrequest.PullRequest, error) {
 	// TODO: implement
 	return nil, nil
 }

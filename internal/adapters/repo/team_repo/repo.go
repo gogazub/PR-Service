@@ -1,56 +1,58 @@
 package teamrepo
 
 import (
-	"PRService/internal/domain"
+	"PRService/internal/domain/team"
 	"context"
 	"database/sql"
+	"os/user"
 )
 
-type TeamRepo struct {
+type Repo struct {
 	db *sql.DB
 }
 
-func NewTeamRepo(db *sql.DB) *TeamRepo {
-	return &TeamRepo{db: db}
+func NewTeamRepo(db *sql.DB) *Repo {
+	return &Repo{db: db}
 }
 
-// Create saves new team
-func (r *TeamRepo) Create(ctx context.Context, team *domain.Team) error {
+// Save saves new team
+func (r *Repo) Save(ctx context.Context, team *team.Team) error {
 	// TODO: implement
 	return nil
 }
 
 // GetByName returns team by name
-func (r *TeamRepo) GetByName(ctx context.Context, name string) (*domain.Team, error) {
+func (r *Repo) GetByName(ctx context.Context, name string) (*team.Team, error) {
 	// TODO: implement
 	return nil, nil
 }
 
 // GetByID returns team by id
-func (r *TeamRepo) GetByID(ctx context.Context, id string) (*domain.Team, error) {
+func (r *Repo) GetByID(ctx context.Context, id string) (*team.Team, error) {
 	// TODO: implement
 	return nil, nil
 }
 
 // GetActiveUsersInTeam returns all active users in team
-func (r *TeamRepo) GetActiveUsersInTeam(ctx context.Context, teamID string) ([]*domain.User, error) {
+func (r *Repo) GetActiveUsersInTeam(ctx context.Context, teamID string) ([]*user.User, error) {
 	// TODO: implement
 	return nil, nil
 }
 
 // Update modifies an existing team
-func (r *TeamRepo) Update(ctx context.Context, team *domain.Team) {
+func (r *Repo) Update(ctx context.Context, team *team.Team) error {
 	// TODO: implement
+	return nil
 }
 
 // DeleteByID deletes team by id
-func (r *TeamRepo) DeleteByID(ctx context.Context, teamID string) error {
+func (r *Repo) DeleteByID(ctx context.Context, teamID string) error {
 	// TODO: implement
 	return nil
 }
 
 // DeleteByName deletes team by name
-func (r *TeamRepo) DeleteByName(ctx context.Context, name string) error {
+func (r *Repo) DeleteByName(ctx context.Context, name string) error {
 	// TODO: implement
 	return nil
 }

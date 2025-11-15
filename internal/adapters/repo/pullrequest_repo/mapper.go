@@ -1,23 +1,26 @@
 package pullrequestrepo
 
-import "PRService/internal/domain"
+import (
+	"PRService/internal/domain/pullrequest"
+	"PRService/internal/domain/user"
+)
 
-func pullRequestModelToDomain(m PullRequestModel) *domain.PullRequest {
-	var author domain.UserID
+func pullRequestModelToDomain(m PullRequestModel) *pullrequest.PullRequest {
+	var author user.ID
 	if m.AuthorID != "" {
-		author = domain.UserID(m.AuthorID)
+		author = user.ID(m.AuthorID)
 	}
 
-	return &domain.PullRequest{
-		PullRequestID: domain.PullRequestID(m.PRID),
+	return &pullrequest.PullRequest{
+		PullRequestID: pullrequest.ID(m.PRID),
 		Name:          m.Name,
 		Author:        author,
 		Status:        m.Status,
-		Reviewers:     [2]domain.UserID{},
+		Reviewers:     [2]user.ID{},
 	}
 }
 
-func pullRequestDomainToModel(pr *domain.PullRequest) PullRequestModel {
+func pullRequestDomainToModel(pr *pullrequest.PullRequest) PullRequestModel {
 	// Может быть такое, что со временем автор pr будет удален.
 	authorID := ""
 	if pr.Author != "" {
