@@ -13,7 +13,7 @@ func teamModelToDomain(m TeamModel) *team.Team {
 
 func teamDomainToModel(t *team.Team) TeamModel {
 	return TeamModel{
-		Name: t.Name,
+		Name:    t.Name,
 		Members: t.Members,
 	}
 }

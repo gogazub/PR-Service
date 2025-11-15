@@ -12,6 +12,10 @@ type Repo struct {
 	db *sql.DB
 }
 
+func New(db *sql.DB) *Repo {
+	return &Repo{db}
+}
+
 // Save saves new user
 func (r *Repo) Save(ctx context.Context, u *user.User) error {
 	const q = `INSERT INTO users (user_id, name, is_active)
