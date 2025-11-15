@@ -9,6 +9,7 @@ import (
 )
 
 type Service interface {
+	Save(ctx context.Context, u *user.User)  (*user.User, error)
 	CreateUser(ctx context.Context, name string) (*user.User, error)
 	GetByID(ctx context.Context, id user.ID) (*user.User, error)
 	DeleteByID(ctx context.Context, id user.ID) error
@@ -22,6 +23,16 @@ type service struct {
 func New(repo user.Repo) Service {
 	return &service{userRepo: repo}
 }
+
+func (svc *service)	Save(ctx context.Context, u *user.User)  (*user.User, error){
+	err := svc.userRepo.Save(ctx, u)
+	if err != nil {
+		return nil, fmt.Errorf("create user: %w", err)
+	}
+
+	return u, nil
+}
+
 
 func (svc *service) CreateUser(ctx context.Context, name string) (*user.User, error) {
 	id := uuid.New().String()

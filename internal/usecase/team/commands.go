@@ -10,7 +10,6 @@ type CreateTeamCommand struct {
 }
 
 type UpdateTeamCommand struct {
-	TeamID  string
 	Name    string
 	Members []user.ID
 }

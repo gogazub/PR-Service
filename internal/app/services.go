@@ -6,6 +6,7 @@ import (
 	user_usecase "PRService/internal/usecase/user"
 )
 
+// Агрегированные в одну сущность сервисы. Точка взаимодействия с приложение.
 type Services struct {
     User        user_usecase.Service
     Team        team_usecase.Service

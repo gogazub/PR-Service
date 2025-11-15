@@ -29,21 +29,21 @@ func (r *Repo) Save(ctx context.Context, t *team.Team) error {
 	}()
 
 	const qTeam = `
-		INSERT INTO teams (team_id, team_name)
-		VALUES ($1, $2)
+		INSERT INTO teams team_name
+		VALUES $1
 	`
 
-	if _, err := tx.ExecContext(ctx, qTeam, t.ID, t.Name); err != nil {
+	if _, err := tx.ExecContext(ctx, qTeam, t.Name); err != nil {
 		return fmt.Errorf("save team: insert team: %w", err)
 	}
 
 	const qMembers = `
-        INSERT INTO user_teams (user_id, team_id)
+        INSERT INTO user_teams (user_id, team_name)
         VALUES ($1, $2)
     `
 
 	for _, userID := range t.Members {
-		if _, err := tx.ExecContext(ctx, qMembers, userID, t.ID); err != nil {
+		if _, err := tx.ExecContext(ctx, qMembers, userID, t.Name); err != nil {
 			return fmt.Errorf("save team: insert member %s: %w", userID, err)
 		}
 	}
@@ -66,43 +66,16 @@ func (r *Repo) GetByName(ctx context.Context, name string) (*team.Team, error) {
 	var tm TeamModel
 
 	row := r.db.QueryRowContext(ctx, qTeam, name)
-	if err := row.Scan(&tm.ID, &tm.Name); err != nil {
+	if err := row.Scan(&tm.Name); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, team.ErrTeamNotFound
 		}
 		return nil, fmt.Errorf("get by name: scan: %w", err)
 	}
 
-	members, err := r.loadMembers(ctx, nil, team.ID(tm.ID))
+	members, err := r.loadMembers(ctx, nil, tm.Name)
 	if err != nil {
-		return nil, fmt.Errorf("get by name: team: %s: load members: %w", tm.ID, err)
-	}
-	tm.Members = members
-
-	return teamModelToDomain(tm), nil
-}
-
-// GetByID returns team by id
-func (r *Repo) GetByID(ctx context.Context, id team.ID) (*team.Team, error) {
-	const qTeam = `
-        SELECT team_id, team_name
-        FROM teams
-        WHERE team_id = $1
-    `
-
-	var tm TeamModel
-
-	row := r.db.QueryRowContext(ctx, qTeam, id)
-	if err := row.Scan(&tm.ID, &tm.Name); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, team.ErrTeamNotFound
-		}
-		return nil, fmt.Errorf("get team: scan: %w", err)
-	}
-
-	members, err := r.loadMembers(ctx, nil, team.ID(tm.ID))
-	if err != nil {
-		return nil, fmt.Errorf("get by id: team: %s: load members: %w", id, err)
+		return nil, fmt.Errorf("get by name: team: %s: load members: %w", tm.Name, err)
 	}
 	tm.Members = members
 
@@ -110,16 +83,16 @@ func (r *Repo) GetByID(ctx context.Context, id team.ID) (*team.Team, error) {
 }
 
 // GetActiveUsersInTeam returns all active users in team
-func (r *Repo) GetActiveUsersInTeam(ctx context.Context, teamID team.ID) ([]*user.User, error) {
+func (r *Repo) GetActiveUsersInTeam(ctx context.Context, teamName string) ([]*user.User, error) {
 	const q = `
-		SELECT u.user_id, u.name, u.is_active
+		SELECT u.name, u.is_active
 		FROM users u
 		INNER JOIN user_teams ut ON ut.user_id = u.user_id
-		WHERE ut.team_id = $1
+		WHERE ut.team_name = $1
 		  AND u.is_active = TRUE
 	`
 
-	rows, err := r.db.QueryContext(ctx, q, teamID)
+	rows, err := r.db.QueryContext(ctx, q, teamName)
 	if err != nil {
 		return nil, fmt.Errorf("get active users in team: query: %w", err)
 	}
@@ -156,10 +129,10 @@ func (r *Repo) Update(ctx context.Context, t *team.Team) error {
 	const qUpdateTeam = `
 		UPDATE teams
 		SET team_name = $1
-		WHERE team_id = $2
+		WHERE team_name = $2
 	`
 
-	res, err := tx.ExecContext(ctx, qUpdateTeam, t.Name, t.ID)
+	res, err := tx.ExecContext(ctx, qUpdateTeam, t.Name, t.Name)
 	if err != nil {
 		return fmt.Errorf("update team: update team: %w", err)
 	}
@@ -174,47 +147,24 @@ func (r *Repo) Update(ctx context.Context, t *team.Team) error {
 
 	const qDeleteMembers = `
 		DELETE FROM user_teams
-		WHERE team_id = $1
+		WHERE team_name = $1
 	`
-	if _, err := tx.ExecContext(ctx, qDeleteMembers, t.ID); err != nil {
+	if _, err := tx.ExecContext(ctx, qDeleteMembers, t.Name); err != nil {
 		return fmt.Errorf("update team: delete members: %w", err)
 	}
 
 	const qInsertMember = `
-        INSERT INTO user_teams (user_id, team_id)
+        INSERT INTO user_teams (user_name, team_name)
         VALUES ($1, $2)
     `
 	for _, userID := range t.Members {
-		if _, err := tx.ExecContext(ctx, qInsertMember, userID, t.ID); err != nil {
+		if _, err := tx.ExecContext(ctx, qInsertMember, userID, t.Name); err != nil {
 			return fmt.Errorf("update team: insert member %s: %w", userID, err)
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("update team: commit: %w", err)
-	}
-
-	return nil
-}
-
-// DeleteByID deletes team by id
-func (r *Repo) DeleteByID(ctx context.Context, teamID string) error {
-	const q = `
-		DELETE FROM teams
-		WHERE team_id = $1
-	`
-
-	res, err := r.db.ExecContext(ctx, q, teamID)
-	if err != nil {
-		return fmt.Errorf("delete by id: exec: %w", err)
-	}
-
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("delete by id: rows affected: %w", err)
-	}
-	if affected == 0 {
-		return team.ErrTeamNotFound
 	}
 
 	return nil
@@ -243,11 +193,11 @@ func (r *Repo) DeleteByName(ctx context.Context, name string) error {
 	return nil
 }
 
-func (r *Repo) loadMembers(ctx context.Context, tx *sql.Tx, teamID team.ID) ([]user.ID, error) {
+func (r *Repo) loadMembers(ctx context.Context, tx *sql.Tx, teamName string) ([]user.ID, error) {
 	const q = `
 		SELECT user_id
 		FROM user_teams
-		WHERE team_id = $1
+		WHERE team_name = $1
 	`
 
 	var (
@@ -256,9 +206,9 @@ func (r *Repo) loadMembers(ctx context.Context, tx *sql.Tx, teamID team.ID) ([]u
 	)
 
 	if tx == nil {
-		rows, err = r.db.QueryContext(ctx, q, teamID)
+		rows, err = r.db.QueryContext(ctx, q, teamName)
 	} else {
-		rows, err = tx.QueryContext(ctx, q, teamID)
+		rows, err = tx.QueryContext(ctx, q, teamName)
 	}
 
 	if err != nil {

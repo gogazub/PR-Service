@@ -9,14 +9,9 @@ CREATE TABLE users (
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     deleted_at TIMESTAMPTZ NULL
 );
-
--- Хотя и можно использовать team_name как естественный ключ, но тогда может быть две проблемы.
--- 1. Если team_name длинное, то будет много копий длинного названия. 
--- 2. Если захотим изменить team_name - придется каскадно менять во всех строках. 
--- Так что для гибкости добавим id 
+ 
 CREATE TABLE teams (
-    team_id UUID PRIMARY KEY,
-    team_name TEXT UNIQUE,
+    team_name TEXT PRIMARY KEY,
 
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -48,8 +43,8 @@ CREATE TABLE pull_requests (
 -- Допустим, что юзер может находится сразу в двух командах. Тогда имеем one to many.
 CREATE TABLE user_teams (
     user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
-    team_id UUID REFERENCES teams(team_id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, team_id)
+    team_name UUID REFERENCES teams(team_name) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, team_name)
 );
 
 -- Отдельная таблица для связи pr и reviewrs. Это таблицу стоит вынести, потому в дальнейшем можно будет легко увеличить кол-во ревьюеров  
