@@ -1,10 +1,14 @@
 package teamrepo
 
-import "time"
+import (
+	"PRService/internal/domain/user"
+	"time"
+)
 
 type TeamModel struct {
-	TeamID   string `db:"team_id"`
-	TeamName string `db:"team_name"`
+	ID      string `db:"team_id"`
+	Name    string `db:"team_name"`
+	Members []user.ID
 
 	CreatedAt time.Time  `db:"created_at"`
 	UpdatedAt time.Time  `db:"updated_at"`
