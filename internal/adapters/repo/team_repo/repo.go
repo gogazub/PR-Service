@@ -48,3 +48,9 @@ func (r *TeamRepo) DeleteByID(ctx context.Context, teamID string) error {
 	// TODO: implement
 	return nil
 }
+
+// DeleteByName deletes team by name
+func (r *TeamRepo) DeleteByName(ctx context.Context, name string) error {
+	// TODO: implement
+	return nil
+}
