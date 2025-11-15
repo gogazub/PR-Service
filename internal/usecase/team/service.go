@@ -40,7 +40,7 @@ func (svc *teamService) GetActiveUsersInTeam(ctx context.Context, teamID team.ID
 
 func (svc *teamService) Update(ctx context.Context, cmd UpdateTeamCommand) error {
 	team := new(team.Team)
-	team.TeamID = string(cmd.TeamID)
+	team.ID = cmd.TeamID
 	if cmd.Name != "" {
 		team.Name = cmd.Name
 	}
