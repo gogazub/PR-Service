@@ -1,7 +1,6 @@
 package team_usecase
 
 import (
-	"PRService/internal/domain/team"
 	"PRService/internal/domain/user"
 )
 
@@ -11,7 +10,7 @@ type CreateTeamCommand struct {
 }
 
 type UpdateTeamCommand struct {
-	TeamID  team.ID
+	TeamID  string
 	Name    string
 	Members []user.ID
 }

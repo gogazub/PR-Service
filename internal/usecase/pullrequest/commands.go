@@ -6,23 +6,23 @@ import (
 )
 
 type CreatePRCommand struct {
-    Name      string
-    Author    user.ID
-    Reviewers [2]user.ID
+	Name      string
+	Author    user.ID
+	Reviewers []user.ID
 }
 
 type UpdateStatusCommand struct {
-    PullRequestID pullrequest.ID
-    Status        pullrequest.Status
+	PullRequestID pullrequest.ID
+	Status        pullrequest.Status
 }
 
 type AssignReviewersCommand struct {
-    PullRequestID pullrequest.ID
-    Reviewers     []user.ID
+	PullRequestID pullrequest.ID
+	Reviewers     []user.ID
 }
 
 type ReassignReviewerCommand struct {
-    PullRequestID pullrequest.ID
-    OldReviewerID user.ID
-    NewReviewerID user.ID
+	PullRequestID pullrequest.ID
+	OldReviewerID user.ID
+	NewReviewerID user.ID
 }

@@ -2,59 +2,111 @@ package team_usecase
 
 import (
 	"PRService/internal/domain/team"
+	"PRService/internal/domain/user"
 	"context"
-	"os/user"
+	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type Service interface {
 	CreateTeam(ctx context.Context, cmd CreateTeamCommand) (*team.Team, error)
+
 	GetByName(ctx context.Context, name string) (*team.Team, error)
-	GetByID(ctx context.Context, id team.ID) (*team.Team, error)
-	GetActiveUsersInTeam(ctx context.Context, id team.ID) ([]*user.User, error)
+	GetByID(ctx context.Context, id string) (*team.Team, error)
+
+	GetActiveUsersInTeam(ctx context.Context, id string) ([]*user.User, error)
+
 	Update(ctx context.Context, cmd UpdateTeamCommand) error
-	DeleteByID(ctx context.Context, id team.ID) error
+
+	DeleteByID(ctx context.Context, id string) error
 	DeleteByName(ctx context.Context, name string) error
 }
 
-type teamService struct {
+type service struct {
 	teamRepo team.Repo
 }
 
-func (svc *teamService) CreateTeam(ctx context.Context, cmd CreateTeamCommand) (*team.Team, error) {
-	id := "id" // TODO: id generator
-	team := team.NewTeam(team.ID(id), cmd.Name, cmd.Members)
-	return team, svc.teamRepo.Save(ctx, team)
+func New(repo team.Repo) Service {
+	return &service{teamRepo: repo}
 }
 
-func (svc *teamService) GetByName(ctx context.Context, name string) (*team.Team, error) {
-	return svc.teamRepo.GetByName(ctx, name)
-}
+func (svc *service) CreateTeam(ctx context.Context, cmd CreateTeamCommand) (*team.Team, error) {
 
-func (svc *teamService) GetByID(ctx context.Context, id team.ID) (*team.Team, error) {
-	return svc.teamRepo.GetByID(ctx, id)
-}
+	id := team.ID(uuid.New().String())
 
-func (svc *teamService) GetActiveUsersInTeam(ctx context.Context, teamID team.ID) ([]*user.User, error) {
-	return svc.teamRepo.GetActiveUsersInTeam(ctx, string(teamID))
-}
+	t := team.NewTeam(
+		id,
+		cmd.Name,
+		cmd.Members,
+	)
 
-func (svc *teamService) Update(ctx context.Context, cmd UpdateTeamCommand) error {
-	team := new(team.Team)
-	team.ID = cmd.TeamID
-	if cmd.Name != "" {
-		team.Name = cmd.Name
-	}
-	if len(cmd.Members) != 0 {
-		team.Members = cmd.Members
+	if err := svc.teamRepo.Save(ctx, t); err != nil {
+		return nil, fmt.Errorf("create team: %w", err)
 	}
 
-	return svc.teamRepo.Update(ctx, team)
+	return t, nil
 }
 
-func (svc *teamService) DeleteByID(ctx context.Context, teamID team.ID) error {
-	return svc.teamRepo.DeleteByID(ctx, teamID)
+func (svc *service) GetByName(ctx context.Context, name string) (*team.Team, error) {
+
+	t, err := svc.teamRepo.GetByName(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("get team by name %q: %w", name, err)
+	}
+
+	return t, nil
 }
 
-func (svc *teamService) DeleteByName(ctx context.Context, teamName string) error {
-	return svc.teamRepo.DeleteByName(ctx, teamName)
+func (svc *service) GetByID(ctx context.Context, id string) (*team.Team, error) {
+
+	t, err := svc.teamRepo.GetByID(ctx, team.ID(id))
+	if err != nil {
+		return nil, fmt.Errorf("get team by id %s: %w", id, err)
+	}
+
+	return t, nil
+}
+
+func (svc *service) GetActiveUsersInTeam(ctx context.Context, id string) ([]*user.User, error) {
+
+	users, err := svc.teamRepo.GetActiveUsersInTeam(ctx, team.ID(id))
+	if err != nil {
+		return nil, fmt.Errorf("get active users in team %s: %w", id, err)
+	}
+
+	return users, nil
+}
+
+func (svc *service) Update(ctx context.Context, cmd UpdateTeamCommand) error {
+
+	t := &team.Team{
+		ID:      team.ID(cmd.TeamID),
+		Name:    cmd.Name,
+		Members: cmd.Members,
+	}
+
+	if err := svc.teamRepo.Update(ctx, t); err != nil {
+		return fmt.Errorf("update team (id: %s): %w", cmd.TeamID, err)
+	}
+
+	return nil
+}
+
+func (svc *service) DeleteByID(ctx context.Context, id string) error {
+
+	if err := svc.teamRepo.DeleteByID(ctx, team.ID(id)); err != nil {
+		return fmt.Errorf("delete team by id %s: %w", id, err)
+	}
+
+	return nil
+}
+
+func (svc *service) DeleteByName(ctx context.Context, name string) error {
+
+	if err := svc.teamRepo.DeleteByName(ctx, name); err != nil {
+		return fmt.Errorf("delete team by name %q: %w", name, err)
+	}
+
+	return nil
 }

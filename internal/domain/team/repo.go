@@ -1,8 +1,7 @@
 package team
 
 import (
-	"os/user"
-
+	"PRService/internal/domain/user"
 	"context"
 )
 
@@ -21,7 +20,7 @@ type Repo interface {
 	GetByID(ctx context.Context, id ID) (*Team, error)
 
 	// GetActiveUsersInTeam returns all active users in team
-	GetActiveUsersInTeam(ctx context.Context, teamID string) ([]*user.User, error)
+	GetActiveUsersInTeam(ctx context.Context, teamID ID) ([]*user.User, error)
 
 	// Update updates team in DB
 	Update(ctx context.Context, team *Team) error

@@ -3,6 +3,9 @@ package user_usecase
 import (
 	"PRService/internal/domain/user"
 	"context"
+	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type Service interface {
@@ -21,22 +24,39 @@ func New(repo user.Repo) Service {
 }
 
 func (svc *service) CreateUser(ctx context.Context, name string) (*user.User, error) {
-	id := "id" // genarate id
-	user := user.NewUser(id, name, false)
-    // TODO: process error
-	err := svc.userRepo.Save(ctx, user)
-	return user, err
+	id := uuid.New().String()
+	u := user.NewUser(id, name, false)
+
+	err := svc.userRepo.Save(ctx, u)
+	if err != nil {
+		return nil, fmt.Errorf("create user: %w", err)
+	}
+
+	return u, nil
 }
 
 func (svc *service) GetByID(ctx context.Context, userID user.ID) (*user.User, error) {
-	return svc.userRepo.GetByID(ctx, userID)
 
+	u, err := svc.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get user by id %s: %w", userID, err)
+
+	}
+	return u, nil
 }
 
 func (svc *service) DeleteByID(ctx context.Context, userID user.ID) error {
-	return svc.userRepo.DeleteByID(ctx, userID)
+	err := svc.userRepo.DeleteByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("delete by id: user id: %s: %w", userID, err)
+	}
+	return nil
 }
 
 func (svc *service) UpdateActive(ctx context.Context, cmd UpdateActiveCommand) error {
-	return svc.userRepo.UpdateActive(ctx, cmd.UserID, cmd.IsActive)
+	err := svc.userRepo.UpdateActive(ctx, cmd.UserID, cmd.IsActive)
+	if err != nil {
+		return fmt.Errorf("update active: (id active): (%s, %t): %w", cmd.UserID, cmd.IsActive, err)
+	}
+	return nil
 }
