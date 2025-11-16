@@ -101,3 +101,86 @@ func (svc *Services) CreatePR(ctx context.Context, cmd pullrequest_usecase.Creat
 	return pr, nil
 
 }
+
+
+type ReassignReviewerCommand struct {
+	PullRequestID  pullrequest.ID
+	OldReviewerID  user.ID
+	NewReviewerID  user.ID // будет заполнен в сервисе
+}
+
+func (svc *Services) ReassignReviewer( ctx context.Context, cmd pullrequest_usecase.ReassignReviewerCommand, ) (*pullrequest.PullRequest, error) {
+	pr, err := svc.PullRequest.GetByID(ctx, cmd.PullRequestID)
+	if err != nil {
+		return nil, fmt.Errorf("service: reassign reviewer: get pr: %w", err)
+	}
+
+	if pr.Author == "" {
+		return nil, pullrequest.ErrNoAuthor
+	}
+
+	oldIdx := -1
+	for i, rid := range pr.Reviewers {
+		if rid == cmd.OldReviewerID {
+			oldIdx = i
+			break
+		}
+	}
+	if oldIdx == -1 {
+		return nil, pullrequest.ErrReviewerNotAssigned
+	}
+
+	author, err := svc.User.GetByID(ctx, pr.Author)
+	if err != nil {
+		return nil, fmt.Errorf("service: reassign reviewer: get author: %w", err)
+	}
+
+	users, err := svc.Team.GetActiveUsersInTeam(ctx, author.TeamName)
+	if err != nil {
+		return nil, fmt.Errorf("service: reassign reviewer: get team users: %w", err)
+	}
+
+	candidates := make([]user.ID, 0, len(users))
+	for _, u := range users {
+		uid := u.UserID
+
+		if uid == pr.Author {
+			continue
+		}
+		if uid == cmd.OldReviewerID {
+			continue
+		}
+		alreadyAssigned := false
+		for _, rid := range pr.Reviewers {
+			if rid == uid {
+				alreadyAssigned = true
+				break
+			}
+		}
+		if alreadyAssigned {
+			continue
+		}
+
+		candidates = append(candidates, uid)
+	}
+
+	if len(candidates) == 0 {
+		return nil, pullrequest.ErrNoCandidate
+	}
+
+	newIdx := rand.Intn(len(candidates))
+	newReviewerID := candidates[newIdx]
+	cmd.NewReviewerID = newReviewerID
+
+	if err := svc.PullRequest.ReassignReviewers(ctx, cmd); err != nil {
+		return nil, fmt.Errorf("service: reassign reviewer: %w", err)
+	}
+
+	updated := *pr
+	updated.Reviewers = make([]user.ID, len(pr.Reviewers))
+	copy(updated.Reviewers, pr.Reviewers)
+
+	updated.Reviewers[oldIdx] = newReviewerID
+
+	return &updated, nil
+}

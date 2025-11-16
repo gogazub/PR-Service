@@ -8,10 +8,9 @@ import (
 )
 
 type Service interface {
-	//Create(ctx context.Context, cmd CreatePRCommand) (*pullrequest.PullRequest, error)
-	Save(ctx context.Context, pr *pullrequest.PullRequest ) error
+	Save(ctx context.Context, pr *pullrequest.PullRequest) error
 	GetByID(ctx context.Context, id pullrequest.ID) (*pullrequest.PullRequest, error)
-	UpdateStatus(ctx context.Context, cmd UpdateStatusCommand)  (*pullrequest.PullRequest, error) 
+	UpdateStatus(ctx context.Context, cmd UpdateStatusCommand) (*pullrequest.PullRequest, error)
 	AssignReviewers(ctx context.Context, cmd AssignReviewersCommand) error
 	ReassignReviewers(ctx context.Context, cmd ReassignReviewerCommand) error
 	ListByUserID(ctx context.Context, id user.ID) ([]*pullrequest.PullRequest, error)
@@ -60,7 +59,7 @@ func (svc *service) GetByID(ctx context.Context, prID pullrequest.ID) (*pullrequ
 
 func (svc *service) UpdateStatus(ctx context.Context, cmd UpdateStatusCommand) (*pullrequest.PullRequest, error) {
 
-	pr, err := svc.prRepo.UpdateStatus(ctx, cmd.PullRequestID, pullrequest.MERGED)
+	pr, err := svc.prRepo.UpdateStatus(ctx, cmd.PullRequestID)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"update pull request status: id: %s: %w",
@@ -89,15 +88,8 @@ func (svc *service) AssignReviewers(ctx context.Context, cmd AssignReviewersComm
 func (svc *service) ReassignReviewers(ctx context.Context, cmd ReassignReviewerCommand) error {
 
 	if err := svc.prRepo.ReassignReviewers(ctx, cmd.PullRequestID, cmd.OldReviewerID, cmd.NewReviewerID); err != nil {
-		return fmt.Errorf(
-			"reassign reviewer for pull request %s: from=%s to=%s: %w",
-			cmd.PullRequestID,
-			cmd.OldReviewerID,
-			cmd.NewReviewerID,
-			err,
-		)
+		return fmt.Errorf("pr service : reassign: %w", err)
 	}
-
 	return nil
 }
 
