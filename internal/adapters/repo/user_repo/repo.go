@@ -18,10 +18,10 @@ func New(db *sql.DB) *Repo {
 
 // Save saves new user
 func (r *Repo) Save(ctx context.Context, u *user.User) error {
-	const q = `INSERT INTO users (user_id, name, is_active)
-			   VALUES ($1, $2, $3)`
+	const q = `INSERT INTO users (user_id, user_name, team_name, is_active)
+			   VALUES ($1, $2, $3, $4)`
 
-	_, err := r.db.ExecContext(ctx, q, u.UserID, u.Name, u.IsActive)
+	_, err := r.db.ExecContext(ctx, q, u.UserID, u.Name, u.TeamName, u.IsActive)
 	if err != nil {
 		return fmt.Errorf("save: user: %s: %w", u.UserID, err)
 	}
@@ -32,21 +32,21 @@ func (r *Repo) Save(ctx context.Context, u *user.User) error {
 // GetByID returns user by ID
 func (r *Repo) GetByID(ctx context.Context, id user.ID) (*user.User, error) {
 	const q = `
-		SELECT user_id, name, is_active
+		SELECT user_id, user_name, team_name, is_active
 		FROM users
 		WHERE user_id = $1
 		`
 	row := r.db.QueryRowContext(ctx, q, id)
 
 	var u UserModel
-	if err := row.Scan(&u.UserID, &u.Name, &u.IsActive); err != nil {
+	if err := row.Scan(&u.UserID, &u.Name, &u.TeamName, &u.IsActive); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("get user by id: user: %s: %w", id, user.ErrUserNotFound)
 		}
 		return nil, fmt.Errorf("get user by id: user: %s: scan: %w", id, err)
 	}
 
-	return userModelToDomain(u), nil
+	return userModelToDomain(&u), nil
 
 }
 
