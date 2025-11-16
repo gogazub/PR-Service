@@ -41,7 +41,7 @@ func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	cmd := pullrequest_usecase.CreatePRCommand{
 		ID:     req.PullRequestID,
-		Name :  req.PullRequestName,
+		Name:   req.PullRequestName,
 		Author: user.ID(req.AuthorID),
 	}
 	pr, err := h.Services.CreatePR(ctx, cmd)
@@ -58,9 +58,15 @@ func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 			httperror.WriteErrorResponse(w, http.StatusNotFound, httperror.ErrorCodeNotFound, "team not found")
 			return
 		}
+		h.logger.Errorf("create pr: %w",err)
+		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
+		return
 	}
 	
-	resp := PRToDTO(pr)
+	
+	resp := CreatePullRequestResponse{
+		PR : PRToDTO(pr),
+	}
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Errorf("create pr: json encode: %w", err)

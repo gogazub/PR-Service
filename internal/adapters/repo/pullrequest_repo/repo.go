@@ -45,7 +45,7 @@ func (r *Repo) Save(ctx context.Context, pr *pullrequest.PullRequest) error {
 		pr.PullRequestID,
 		pr.Name,
 		authorID,
-		pr.Status,
+		pullrequest.StatusToString(pr.Status),
 	); err != nil {
 		return fmt.Errorf("save pull request: insert pull_requests: %w", err)
 	}
@@ -310,12 +310,15 @@ func (r *Repo) ListByUserID(ctx context.Context, userID user.ID) ([]*pullrequest
 			authorID sql.NullString
 		)
 
-		if err := rows.Scan(&m.PRID, &m.Name, &authorID, &m.Status); err != nil {
+		var status string 
+		if err := rows.Scan(&m.PRID, &m.Name, &authorID, &status); err != nil {
 			return nil, fmt.Errorf("list by user id: scan: %w", err)
 		}
+		m.Status = pullrequest.StringToStatus(status)
 		if authorID.Valid {
 			m.AuthorID = authorID.String
 		}
+		
 
 		reviewers, err := r.loadReviewers(ctx, nil, pullrequest.ID(m.PRID))
 		if err != nil {

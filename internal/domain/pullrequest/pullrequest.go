@@ -37,3 +37,10 @@ func StatusToString(s Status) string {
 	}
 	return "MERGED"
 }
+
+func StringToStatus(s string) Status {
+	if s == "OPEN" {
+		return OPEN
+	}
+	return MERGED
+}
