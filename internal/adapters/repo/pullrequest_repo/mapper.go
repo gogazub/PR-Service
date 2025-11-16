@@ -11,9 +11,9 @@ func pullRequestModelToDomain(m PullRequestModel, reviewers []user.ID) *pullrequ
 		author = user.ID(m.AuthorID)
 	}
 
-	var reviewersArr [2]user.ID
+	var reviewersArr []user.ID
 	for i := 0; i < len(reviewersArr) && i < len(reviewers); i++ {
-		reviewersArr[i] = reviewers[i]
+		reviewersArr = append(reviewersArr, reviewers[i])
 	}
 
 	return &pullrequest.PullRequest{

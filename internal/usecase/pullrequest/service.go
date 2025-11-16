@@ -11,7 +11,7 @@ type Service interface {
 	//Create(ctx context.Context, cmd CreatePRCommand) (*pullrequest.PullRequest, error)
 	Save(ctx context.Context, pr *pullrequest.PullRequest ) error
 	GetByID(ctx context.Context, id pullrequest.ID) (*pullrequest.PullRequest, error)
-	UpdateStatus(ctx context.Context, cmd UpdateStatusCommand) error
+	UpdateStatus(ctx context.Context, cmd UpdateStatusCommand)  (*pullrequest.PullRequest, error) 
 	AssignReviewers(ctx context.Context, cmd AssignReviewersCommand) error
 	ReassignReviewers(ctx context.Context, cmd ReassignReviewerCommand) error
 	ListByUserID(ctx context.Context, id user.ID) ([]*pullrequest.PullRequest, error)
@@ -58,18 +58,18 @@ func (svc *service) GetByID(ctx context.Context, prID pullrequest.ID) (*pullrequ
 	return pr, nil
 }
 
-func (svc *service) UpdateStatus(ctx context.Context, cmd UpdateStatusCommand) error {
+func (svc *service) UpdateStatus(ctx context.Context, cmd UpdateStatusCommand) (*pullrequest.PullRequest, error) {
 
-	if err := svc.prRepo.UpdateStatus(ctx, cmd.PullRequestID, cmd.Status); err != nil {
-		return fmt.Errorf(
-			"update pull request status (id: %s, status: %s): %w",
+	pr, err := svc.prRepo.UpdateStatus(ctx, cmd.PullRequestID, pullrequest.MERGED)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"update pull request status: id: %s: %w",
 			cmd.PullRequestID,
-			cmd.Status,
 			err,
 		)
 	}
 
-	return nil
+	return pr, nil
 }
 
 func (svc *service) AssignReviewers(ctx context.Context, cmd AssignReviewersCommand) error {

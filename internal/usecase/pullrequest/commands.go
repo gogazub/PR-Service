@@ -13,7 +13,6 @@ type CreatePRCommand struct {
 
 type UpdateStatusCommand struct {
 	PullRequestID pullrequest.ID
-	Status        pullrequest.Status
 }
 
 type AssignReviewersCommand struct {

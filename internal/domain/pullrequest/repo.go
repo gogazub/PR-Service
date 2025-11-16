@@ -16,7 +16,7 @@ type Repo interface {
 	GetByID(ctx context.Context, prID ID) (*PullRequest, error)
 
 	// UpdateStatus changes pull request status
-	UpdateStatus(ctx context.Context, prID ID, status Status) error
+	UpdateStatus(ctx context.Context, prID ID) (*PullRequest, error)
 
 	// AssignReviewers sets reviewers for pull request
 	AssignReviewers(ctx context.Context, prID ID, reviewers []user.ID) error

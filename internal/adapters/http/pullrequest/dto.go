@@ -12,14 +12,6 @@ type PullRequestDTO struct {
 	MergedAt          *time.Time `json:"mergedAt,omitempty"`
 }
 
-// POST /pullRequest/merge
-type MergePullRequestRequestDTO struct {
-	PullRequestID string `json:"pull_request_id"`
-}
-
-type MergePullRequestResponseDTO struct {
-	PR PullRequestDTO `json:"pr"`
-}
 
 // POST /pullRequest/reassign
 type ReassignReviewerRequestDTO struct {
