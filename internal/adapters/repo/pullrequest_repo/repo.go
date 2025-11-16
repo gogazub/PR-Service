@@ -106,76 +106,33 @@ func (r *Repo) GetByID(ctx context.Context, prID pullrequest.ID) (*pullrequest.P
 	return pullRequestModelToDomain(m, reviewers), nil
 }
 
-// UpdateStatus changes pull request status
+// UpdateStatus changes pull request status to MERGED and returns updated PR.
 func (r *Repo) UpdateStatus(ctx context.Context, prID pullrequest.ID) (*pullrequest.PullRequest, error) {
-	
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("pr repo: update status: %w", err)
-	}
-	defer func(){
-		_ = tx.Rollback()
-	}()
-
-
-	var updatedPR pullrequest.PullRequest
-	updatedPR.PullRequestID = prID
-
-	const qGetPR = `
-		SELECT (name, author_id)
-		FROM pull_requests
-		WHERE pr_id
-	`
-
-	// 1. get the old pr
-	pr := tx.QueryRowContext(ctx, qGetPR, prID)	
-	err = pr.Err()
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, pullrequest.ErrPullRequestNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("pr repo: update status: rows affected: %w", err)
-	}
-	err = pr.Scan(&updatedPR.Name, &updatedPR.Author)
-	if err != nil {
-		return nil, fmt.Errorf("pr repo: update status: scan: %w", err)
-	}
-	
-	// 2. get reviewers
-	const qGetReviewers = `
-		SELECT user_id
-		FROM pr_reviewers
-		WHERE pr_id = $1
-	`
-
-	row, err:= tx.QueryContext(ctx, qGetReviewers, prID)
-	if err != nil {
-		return nil, fmt.Errorf("pr repo: update status: get reviewers: %w", err)
-	}
-	var reviewrs []user.ID 
-	for row.Next() {
-    	var userID string
-		if err := row.Scan(&userID); err != nil {
-        	return nil, fmt.Errorf("pr repo: update status: get reviewers: scan: %w", err)
-    	}
-		reviewrs = append(reviewrs, user.ID(userID))
-	}
-	updatedPR.Reviewers = reviewrs
-	
-
-	// 3. update status
 	const qUpdateStatus = `
 		UPDATE pull_requests
-		SET status = 'OPEN'
+		SET status = $1
 		WHERE pr_id = $2
 	`
-	_ , err = tx.ExecContext(ctx, qUpdateStatus, prID)
+
+	res, err := r.db.ExecContext(ctx, qUpdateStatus, pullrequest.StatusToString(pullrequest.MERGED), prID)
 	if err != nil {
-		return nil, fmt.Errorf("pr repo: update status: %w", err)
+		return nil, fmt.Errorf("update pull request status: exec: %w", err)
 	}
 
-	tx.Commit()
-	return &updatedPR, nil
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("update pull request status: rows affected: %w", err)
+	}
+	if affected == 0 {
+		return nil, pullrequest.ErrPullRequestNotFound
+	}
+
+	pr, err := r.GetByID(ctx, prID)
+	if err != nil {
+		return nil, fmt.Errorf("update pull request status: reload pr id %s: %w", prID, err)
+	}
+
+	return pr, nil
 }
 
 // AssignReviewers sets reviewers for pull request
@@ -310,15 +267,14 @@ func (r *Repo) ListByUserID(ctx context.Context, userID user.ID) ([]*pullrequest
 			authorID sql.NullString
 		)
 
-		var status string 
+		var status string
 		if err := rows.Scan(&m.PRID, &m.Name, &authorID, &status); err != nil {
 			return nil, fmt.Errorf("list by user id: scan: %w", err)
 		}
-		m.Status = pullrequest.StringToStatus(status)
+		m.Status = status
 		if authorID.Valid {
 			m.AuthorID = authorID.String
 		}
-		
 
 		reviewers, err := r.loadReviewers(ctx, nil, pullrequest.ID(m.PRID))
 		if err != nil {

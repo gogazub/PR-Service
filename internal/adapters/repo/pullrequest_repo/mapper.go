@@ -20,7 +20,7 @@ func pullRequestModelToDomain(m PullRequestModel, reviewers []user.ID) *pullrequ
 		PullRequestID: pullrequest.ID(m.PRID),
 		Name:          m.Name,
 		Author:        author,
-		Status:        m.Status,
+		Status:        pullrequest.StringToStatus(m.Status),
 		Reviewers:     reviewersArr,
 	}
 }
@@ -36,6 +36,6 @@ func pullRequestDomainToModel(pr *pullrequest.PullRequest) PullRequestModel {
 		PRID:     string(pr.PullRequestID),
 		Name:     pr.Name,
 		AuthorID: authorID,
-		Status:   pr.Status,
+		Status:   pullrequest.StatusToString(pr.Status),
 	}
 }
