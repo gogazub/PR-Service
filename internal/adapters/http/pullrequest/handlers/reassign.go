@@ -19,7 +19,7 @@ type ReassignReviewerRequest struct {
 
 type ReassignReviewerResponse struct {
 	PR         pullrequesthttp.PullRequestDTO `json:"pr"`
-	ReplacedBy string         `json:"replaced_by"`
+	ReplacedBy string                         `json:"replaced_by"`
 }
 
 func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +32,7 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	var req ReassignReviewerRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httperror.WriteBadRequest(w, "bad json")		
+		httperror.WriteBadRequest(w, "bad json")
 		return
 	}
 
@@ -44,15 +44,15 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pr, err := h.Services.ReassignReviewer(ctx, cmd)
 	if err != nil {
-		if errors.Is(err, pullrequest.ErrNoAuthor){
+		if errors.Is(err, pullrequest.ErrNoAuthor) {
 			httperror.WriteErrorResponse(w, http.StatusNotFound, httperror.ErrorCodeBadRequest, "no author")
 			return
 		}
-		if errors.Is(err, pullrequest.ErrNoCandidate){
+		if errors.Is(err, pullrequest.ErrNoCandidate) {
 			httperror.WriteErrorResponse(w, http.StatusConflict, httperror.ErrorCodeNoCandidate, "no candidate")
 			return
 		}
-		if errors.Is(err, pullrequest.ErrPullRequestExists){
+		if errors.Is(err, pullrequest.ErrPullRequestExists) {
 			httperror.WriteErrorResponse(w, http.StatusNotFound, httperror.ErrorCodeNotFound, "pr not found")
 			return
 		}
@@ -60,6 +60,19 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 			httperror.WriteErrorResponse(w, http.StatusConflict, httperror.ErrorCodePRMerged, "pr merged")
 			return
 		}
+		if errors.Is(err, pullrequest.ErrReviewerNotAssigned) {
+			httperror.WriteErrorResponse(
+				w,
+				http.StatusConflict,
+				httperror.ErrorCodeNotAssigned,
+				err.Error(),
+			)
+			return
+		}
+
+		h.logger.Errorf("reassign: %w", err)
+		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
+		return
 	}
 
 	resp := PRToDTO(pr)
@@ -67,5 +80,4 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Errorf("reassign: json encode: ", err)
 	}
-
 }
