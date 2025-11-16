@@ -51,26 +51,26 @@ func (r *Repo) GetByID(ctx context.Context, id user.ID) (*user.User, error) {
 }
 
 // UpdateActive updates user's active status
-func (r *Repo) UpdateActive(ctx context.Context, id user.ID, isActive bool) error {
+func (r *Repo) UpdateActive(ctx context.Context, id user.ID, isActive bool) (*user.User, error) {
 	const q = `
-		UPDATE users
-		SET is_active = $1
-		WHERE user_id = $2
-	`
-	res, err := r.db.ExecContext(ctx, q, isActive, id)
+        UPDATE users
+        SET is_active = $1
+        WHERE user_id = $2
+        RETURNING user_name
+    `
+
+	var u user.User
+	err := r.db.QueryRowContext(ctx, q, isActive, id).Scan(
+		&u.Name,
+	)
 	if err != nil {
-		return fmt.Errorf("update active: user: %s: %w", id, err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("update active: user: %s: %w", id, user.ErrUserNotFound)
+		}
+		return nil, fmt.Errorf("update active: user: %s: %w", id, err)
 	}
 
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("update active: user: %s: %w", id, err)
-	}
-	if rows == 0 {
-		return fmt.Errorf("update active: user: %s: %w", id, user.ErrUserNotFound)
-	}
-
-	return nil
+	return &u, nil
 }
 
 // DeleteByID deletes user by id

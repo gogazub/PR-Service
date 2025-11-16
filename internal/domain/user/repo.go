@@ -14,7 +14,7 @@ type Repo interface {
 	GetByID(ctx context.Context, id ID) (*User, error)
 
 	// UpdateActive updates user's active status
-	UpdateActive(ctx context.Context, id ID, isActive bool) error
+	UpdateActive(ctx context.Context, id ID, isActive bool) (*User, error)
 
 	// Delete deletes user by id
 	DeleteByID(ctx context.Context, id ID) error

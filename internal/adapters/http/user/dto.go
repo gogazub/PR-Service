@@ -1,5 +1,7 @@
 package userhttp
 
+import "PRService/internal/domain/user"
+
 type UserDTO struct {
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
@@ -32,4 +34,13 @@ type PullRequestShortDTO struct {
 type GetUserReviewResponseDTO struct {
 	UserID       string                `json:"user_id"`
 	PullRequests []PullRequestShortDTO `json:"pull_requests"`
+}
+
+func UserToDTO(u *user.User) *UserDTO{
+	return &UserDTO{
+		UserID: string(u.UserID),
+		Username: u.Name,
+		IsActive: u.IsActive,
+		TeamName: "", // TODO
+	}
 }

@@ -9,6 +9,8 @@ const (
 	ErrorCodeNotAssigned ErrorCode = "NOT_ASSIGNED"
 	ErrorCodeNoCandidate ErrorCode = "NO_CANDIDATE"
 	ErrorCodeNotFound    ErrorCode = "NOT_FOUND"
+	ErrorCodeBadRequest  ErrorCode = "IVALID_JSON"
+	ErrorCodeInternal    ErrorCode = "INTERNAL"
 )
 
 type ErrorDTO struct {
