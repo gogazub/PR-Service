@@ -1,6 +1,7 @@
 package app
 
 import (
+	"PRService/internal/domain/pullrequest"
 	"PRService/internal/domain/team"
 	"PRService/internal/domain/user"
 	pullrequest_usecase "PRService/internal/usecase/pullrequest"
@@ -8,6 +9,7 @@ import (
 	user_usecase "PRService/internal/usecase/user"
 	"context"
 	"fmt"
+	"math/rand"
 )
 
 // Агрегированные в одну сущность сервисы. Точка взаимодействия с приложение.
@@ -22,8 +24,8 @@ func NewServices(user user_usecase.Service, team team_usecase.Service, pr pullre
 }
 
 func (svc *Services) CreateTeam(ctx context.Context, cmd team_usecase.CreateTeamAndUsersCommand) (*team.Team, []*user.User, error) {
-	// TODO: создать здесь транзакцию. Либо создаем и team и все users, либо ничего 
-	
+	// TODO: создать здесь транзакцию. Либо создаем и team и все users, либо ничего
+
 	// 1. Make cmd
 	members := cmd.Members
 	ids := make([]user.ID, 0, len(members))
@@ -31,7 +33,7 @@ func (svc *Services) CreateTeam(ctx context.Context, cmd team_usecase.CreateTeam
 		ids = append(ids, u.UserID)
 	}
 	createTeamCmd := team_usecase.CreateTeamCommand{
-		Name: cmd.Name,
+		Name:    cmd.Name,
 		Members: ids,
 	}
 
@@ -52,5 +54,50 @@ func (svc *Services) CreateTeam(ctx context.Context, cmd team_usecase.CreateTeam
 	}
 
 	return t, users, nil
-	
+
+}
+
+func (svc *Services) CreatePR(ctx context.Context, cmd pullrequest_usecase.CreatePRCommand) (*pullrequest.PullRequest, error) {
+	// TODO: делать все операции под общей tx
+
+	// 1. get user
+	u, err := svc.User.GetByID(ctx, cmd.Author)
+	if err != nil {
+		return nil, fmt.Errorf("service: create pr: get author: %w", err)
+	}
+
+	if u.TeamName == "" {
+		return nil, team.ErrTeamNotFound
+	}
+
+	// 2. get team
+	t, err := svc.Team.GetByName(ctx, u.TeamName)
+	if err != nil {
+		return nil, fmt.Errorf("service: create pr: get the author team: %w", err)
+	}
+
+	// 3. get active users
+	activeMembers, err := svc.Team.GetActiveUsersInTeam(ctx, t.Name)
+
+	if err != nil {
+		return nil, fmt.Errorf("service: create pr: get active users in team: %q: %w", t.Name, err)
+	}
+
+	// 4. chose at most 2 reviewers
+	rand.Shuffle(len(activeMembers), func(i, j int) {
+		activeMembers[i], activeMembers[j] = activeMembers[j], activeMembers[i]
+	})
+	reviewers := activeMembers[:min(2, len(activeMembers))]
+	reviewersIDs := make([]user.ID, 0)
+	for _, u := range reviewers {
+		reviewersIDs = append(reviewersIDs, u.UserID)
+	}
+
+	pr := pullrequest.NewPullRequest(cmd.ID, cmd.Name, cmd.Author, pullrequest.OPEN, reviewersIDs)
+	// 5. save pr
+	if err = svc.PullRequest.Save(ctx, pr); err != nil {
+		return nil, fmt.Errorf("service: create pr: %w", err)
+	}
+	return pr, nil
+
 }

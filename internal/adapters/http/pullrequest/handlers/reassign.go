@@ -1,4 +1,4 @@
-package pullreqhttp
+package pullreqhandler
 
 import "net/http"
 

@@ -12,17 +12,6 @@ type PullRequestDTO struct {
 	MergedAt          *time.Time `json:"mergedAt,omitempty"`
 }
 
-// POST /pullRequest/create
-type CreatePullRequestRequestDTO struct {
-	PullRequestID   string `json:"pull_request_id"`
-	PullRequestName string `json:"pull_request_name"`
-	AuthorID        string `json:"author_id"`
-}
-
-type CreatePullRequestResponseDTO struct {
-	PR PullRequestDTO `json:"pr"`
-}
-
 // POST /pullRequest/merge
 type MergePullRequestRequestDTO struct {
 	PullRequestID string `json:"pull_request_id"`

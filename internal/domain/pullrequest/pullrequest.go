@@ -16,7 +16,7 @@ type PullRequest struct {
 	Name          string
 	Author        user.ID
 	Status        Status
-	Reviewers     [2]user.ID
+	Reviewers     []user.ID
 }
 
 // NewPullRequest returns new PullRequest.
@@ -26,14 +26,7 @@ func NewPullRequest(id string, name string, author user.ID, status Status, revie
 		Name:          name,
 		Author:        author,
 		Status:        status,
-	}
-
-	// Take only first two elements
-	for i, val := range reviewers {
-		if i > 1 {
-			break
-		}
-		pr.Reviewers[i] = val
+		Reviewers:     reviewers,
 	}
 	return pr
 }

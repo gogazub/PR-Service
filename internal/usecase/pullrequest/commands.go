@@ -6,9 +6,9 @@ import (
 )
 
 type CreatePRCommand struct {
+	ID        string
 	Name      string
 	Author    user.ID
-	Reviewers []user.ID
 }
 
 type UpdateStatusCommand struct {

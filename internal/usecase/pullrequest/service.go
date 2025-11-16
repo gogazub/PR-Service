@@ -5,12 +5,11 @@ import (
 	"PRService/internal/domain/user"
 	"context"
 	"fmt"
-
-	"github.com/google/uuid"
 )
 
 type Service interface {
-	Create(ctx context.Context, cmd CreatePRCommand) (*pullrequest.PullRequest, error)
+	//Create(ctx context.Context, cmd CreatePRCommand) (*pullrequest.PullRequest, error)
+	Save(ctx context.Context, pr *pullrequest.PullRequest ) error
 	GetByID(ctx context.Context, id pullrequest.ID) (*pullrequest.PullRequest, error)
 	UpdateStatus(ctx context.Context, cmd UpdateStatusCommand) error
 	AssignReviewers(ctx context.Context, cmd AssignReviewersCommand) error
@@ -26,22 +25,27 @@ func New(repo pullrequest.Repo) Service {
 	return &service{prRepo: repo}
 }
 
-func (svc *service) Create(ctx context.Context, cmd CreatePRCommand) (*pullrequest.PullRequest, error) {
+// func (svc *service) Create(ctx context.Context, cmd CreatePRCommand) (*pullrequest.PullRequest, error) {
 
-	id := uuid.New().String()
-	pr := pullrequest.NewPullRequest(
-		id,
-		cmd.Name,
-		cmd.Author,
-		pullrequest.OPEN,
-		cmd.Reviewers,
-	)
+// 	pr := pullrequest.NewPullRequest(
+// 		cmd.ID,
+// 		cmd.Name,
+// 		cmd.Author,
+// 		pullrequest.OPEN,
+// 	)
+	
+// 	if err := svc.prRepo.Save(ctx, pr); err != nil {
+// 		return nil, fmt.Errorf("create pull request: %w", err)
+// 	}
 
+// 	return pr, nil
+// }
+
+func (svc *service) Save(ctx context.Context, pr *pullrequest.PullRequest) error {
 	if err := svc.prRepo.Save(ctx, pr); err != nil {
-		return nil, fmt.Errorf("create pull request: %w", err)
+		return fmt.Errorf("pr service: save rp: %w", err)
 	}
-
-	return pr, nil
+	return nil
 }
 
 func (svc *service) GetByID(ctx context.Context, prID pullrequest.ID) (*pullrequest.PullRequest, error) {
