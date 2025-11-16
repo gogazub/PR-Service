@@ -36,11 +36,10 @@ func (svc *Services) CreateTeam(ctx context.Context, cmd team_usecase.CreateTeam
 		Name:    cmd.Name,
 		Members: ids,
 	}
-
 	// 2. Save team
 	t, err := svc.Team.CreateTeam(ctx, createTeamCmd)
 	if err != nil {
-		return nil, nil, fmt.Errorf("service: create team: team: %q: %w", createTeamCmd.Name, err)
+		return nil, nil, fmt.Errorf("create team: %q: %w", createTeamCmd.Name, err)
 	}
 
 	// 3. Save users
@@ -48,13 +47,12 @@ func (svc *Services) CreateTeam(ctx context.Context, cmd team_usecase.CreateTeam
 	for _, u := range members {
 		_, err := svc.User.CreateUser(ctx, u)
 		if err != nil {
-			return nil, nil, fmt.Errorf("service: create team: create user: user id: %s: %w", u.UserID, err)
+			return nil, nil, fmt.Errorf("create team: %w", err)
 		}
 		users = append(users, u)
 	}
 
 	return t, users, nil
-
 }
 
 func (svc *Services) CreatePR(ctx context.Context, cmd pullrequest_usecase.CreatePRCommand) (*pullrequest.PullRequest, error) {

@@ -11,9 +11,8 @@ CREATE TABLE teams (
 CREATE TABLE users (
     user_id TEXT PRIMARY KEY,
     user_name TEXT NOT NULL,
-    team_name TEXT NOT NULL REFERENCES teams(team_name),
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
-
+    team_name TEXT REFERENCES teams(team_name) ON DELETE SET NULL,
     -- Добавим метки со временем на будущее
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -43,11 +42,11 @@ CREATE TABLE pull_requests (
 --- Отношения между основными таблицами ---
 
 -- Допустим, что юзер может находится сразу в двух командах. Тогда имеем one to many.
-CREATE TABLE user_teams (
-    user_id TEXT REFERENCES users(user_id) ON DELETE CASCADE,
-    team_name TEXT REFERENCES teams(team_name) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, team_name)
-);
+-- CREATE TABLE user_teams (
+--     user_id TEXT REFERENCES users(user_id) ON DELETE CASCADE,
+--     team_name TEXT REFERENCES teams(team_name) ON DELETE CASCADE,
+--     PRIMARY KEY (user_id, team_name)
+-- );
 
 -- Отдельная таблица для связи pr и reviewrs. Это таблицу стоит вынести, потому в дальнейшем можно будет легко увеличить кол-во ревьюеров  
 CREATE TABLE pr_reviewers (

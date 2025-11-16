@@ -35,7 +35,7 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 			httperror.WriteErrorResponse(w, http.StatusBadRequest, httperror.ErrorCodeNotFound, "not found")
 			return
 		}
-		h.logger.Errorf("team handler: get team: team name: %q: %w", teamName, err)
+		h.logger.Errorf("get team: %w", err)
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
 		return
 	}
@@ -43,6 +43,7 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 	// 2. get users
 	users, err := h.Services.User.GetByIDs(ctx, t.Members)
 	if err != nil {
+		h.logger.Errorf("get team: %w", err)
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
 		return
 	}

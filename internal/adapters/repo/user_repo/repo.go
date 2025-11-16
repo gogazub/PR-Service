@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/lib/pq"
 )
 
 type Repo struct {
@@ -62,9 +64,19 @@ func (r *Repo) GetByIDs(ctx context.Context, ids []user.ID) ([]*user.User, error
 		FROM users
 		WHERE user_id = ANY($1)
 	`
-	rows, err := r.db.QueryContext(ctx, q, ids)
+
+	if len(ids) == 0 {
+		return []*user.User{}, nil
+	}
+
+	strIDs := make([]string, len(ids))
+	for i, id := range ids {
+		strIDs[i] = string(id)
+	}
+
+	rows, err := r.db.QueryContext(ctx, q, pq.Array(strIDs))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get users by ids: query: %w", err)
 	}
 	defer rows.Close()
 
@@ -72,13 +84,13 @@ func (r *Repo) GetByIDs(ctx context.Context, ids []user.ID) ([]*user.User, error
 	for rows.Next() {
 		u := new(user.User)
 		if err := rows.Scan(&u.UserID, &u.Name, &u.TeamName, &u.IsActive); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("get users by ids: scan: %w", err)
 		}
 		users = append(users, u)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get users by ids: rows: %w", err)
 	}
 
 	return users, nil

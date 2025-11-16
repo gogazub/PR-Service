@@ -42,7 +42,7 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 			httperror.WriteErrorResponse(w, http.StatusBadRequest, httperror.ErrorCodeTeamExists, "team is already exists")
 			return
 		}
-		h.logger.Errorf("service: ", "add team: ", "create team: ", err.Error())
+		h.logger.Errorf("create team: %w", err)
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
 		return
 	}

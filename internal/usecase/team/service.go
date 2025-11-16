@@ -48,7 +48,7 @@ func (svc *service) CreateTeam(ctx context.Context, cmd CreateTeamCommand) (*tea
 	)
 
 	if err := svc.teamRepo.Save(ctx, t); err != nil {
-		return nil, fmt.Errorf("team service: create team: team: %q: %w", t.Name, err)
+		return nil, fmt.Errorf("create team: %w", err)
 	}
 
 	return t, nil
