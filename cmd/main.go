@@ -1,6 +1,9 @@
 package main
 
 import (
+	pullrequesthttp "PRService/internal/adapters/http/pullrequest"
+	teamhttp "PRService/internal/adapters/http/team"
+	userhttp "PRService/internal/adapters/http/user"
 	pullrequestrepo "PRService/internal/adapters/repo/pullrequest_repo"
 	teamrepo "PRService/internal/adapters/repo/team_repo"
 	userrepo "PRService/internal/adapters/repo/user_repo"
@@ -15,11 +18,13 @@ import (
 	"os"
 
 	"go.uber.org/zap"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
 
-	// Logger 
+	// Logger
 	logger, err  := zap.NewDevelopmentConfig().Build()
 
 	if err != nil {
@@ -38,15 +43,17 @@ func main() {
 
 	// Postgres
 	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%d/%s",
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.PGUser,
 		cfg.PGPassword,
 		cfg.PGHost,
 		cfg.PGPort,
 		cfg.PGDatabase,
+		cfg.SSLMode,
 	)
 
-	db, err := sql.Open("pgx", dsn)
+	sugar.Info("try postgres conntection ", "address ", dsn)
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		sugar.Fatalw("failed to open postgres", "error", err)
 	}
@@ -69,20 +76,41 @@ func main() {
 	pullrequestSvc := pullrequest_usecase.New(pullrequestRepo)
 	svc := app.NewServices(userSvc, teamSvc, pullrequestSvc)
 
+	// Handlers
+	userHandler := userhttp.NewHandler(svc, sugar)
+	teamHandler := teamhttp.NewHandler(svc, sugar)
+	pullrequestHandler := pullrequesthttp.NewHandler(svc, sugar)
+
+	// Mux 
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/users/setIsActive", userHandler.SetIsActive)
+	mux.HandleFunc("/users/getReview", userHandler.GetReview)
+
+	mux.HandleFunc("/team/add", teamHandler.AddTeam)
+	mux.HandleFunc("/team/get", teamHandler.GetTeam)
+
+	mux.HandleFunc("/pullRequest/create", pullrequestHandler.CreatePullRequest)
+	mux.HandleFunc("/pullRequest/merge", pullrequestHandler.MergePullRequest)
+	mux.HandleFunc("/pullRequest/reassign", pullrequestHandler.ReassignReviewer)
+	
+	mux.HandleFunc("/health", HealtHandler)
+
 	// Server
-	heatlzHandler := func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Println("get a new request")
-		w.WriteHeader(http.StatusOK)
-		w.Header().Add("Content-type", "text/plain")
-		str := "Server is working!"
-		_, _ = w.Write([]byte(str))
-	}
-
-	http.HandleFunc("/healtz", heatlzHandler)
-
-	err = http.ListenAndServe(":8080", nil)
+	
+	port := ":"+cfg.HTTPPort
+	err = http.ListenAndServe(port, mux)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
+}
+
+// TODO: refactor
+func HealtHandler(w http.ResponseWriter, _ *http.Request) {
+	fmt.Println("get a new request")
+	w.WriteHeader(http.StatusOK)
+	w.Header().Add("Content-type", "text/plain")
+	str := "Server is working!"
+	_, _ = w.Write([]byte(str))
 }

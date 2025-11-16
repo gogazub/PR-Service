@@ -1,4 +1,13 @@
 --- Основные таблицы ---
+
+CREATE TABLE teams (
+    team_name TEXT PRIMARY KEY,
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ NULL
+);
+
 CREATE TABLE users (
     user_id TEXT PRIMARY KEY,
     user_name TEXT NOT NULL,
@@ -6,14 +15,6 @@ CREATE TABLE users (
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
 
     -- Добавим метки со временем на будущее
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ NULL
-);
- 
-CREATE TABLE teams (
-    team_name TEXT PRIMARY KEY,
-
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     deleted_at TIMESTAMPTZ NULL

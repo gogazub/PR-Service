@@ -15,6 +15,7 @@ type Config struct {
 	PGUser     string
 	PGPassword string
 	PGDatabase string
+	SSLMode    string
 }
 
 func LoadConfig() (*Config, error) {
@@ -29,6 +30,7 @@ func LoadConfig() (*Config, error) {
 		PGUser:     getEnv("POSTGRES_USER", "postgres"),
 		PGPassword: getEnv("POSTGRES_PASSWORD", "postgres"),
 		PGDatabase: getEnv("POSTGRES_DB", "postgres"),
+		SSLMode:    getEnv("SSL_MODE", "disable"),
 	}
 
 	return cfg, nil

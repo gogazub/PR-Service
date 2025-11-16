@@ -11,13 +11,25 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - ./internal/adapters/repo/migrations/0001_init.sql:/docker-entrypoint-initdb.d/0001_init.sql
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
   app:
     container_name: pr-service
     build: .
     environment:
       - PORT=${HTTP_PORT}
+      - HOST=${HTTP_HOST}
+
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
     ports:
       - "${HTTP_PORT}:${HTTP_PORT}"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
