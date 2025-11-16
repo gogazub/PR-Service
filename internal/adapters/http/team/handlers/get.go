@@ -48,14 +48,14 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3. make response
-	members := teamhttp.MembersFromUsers(users)
+	members := MembersFromUsers(users)
 	resp := GetTeamResponse{
-		Team : teamhttp.TeamDTO{
+		Team: teamhttp.TeamDTO{
 			TeamName: teamName,
 			Members:  members,
 		},
 	}
-		
+
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Errorf("get team: json encode: %w", err)
