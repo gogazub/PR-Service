@@ -1,9 +1,9 @@
 package main
 
 import (
-	pullrequesthttp "PRService/internal/adapters/http/pullrequest"
-	teamhttp "PRService/internal/adapters/http/team"
-	userhttp "PRService/internal/adapters/http/user"
+	pullreqhandler "PRService/internal/adapters/http/pullrequest/handlers"
+	teamhandlers "PRService/internal/adapters/http/team/handlers"
+	userhandler "PRService/internal/adapters/http/user/handler"
 	pullrequestrepo "PRService/internal/adapters/repo/pullrequest_repo"
 	teamrepo "PRService/internal/adapters/repo/team_repo"
 	userrepo "PRService/internal/adapters/repo/user_repo"
@@ -77,9 +77,9 @@ func main() {
 	svc := app.NewServices(userSvc, teamSvc, pullrequestSvc)
 
 	// Handlers
-	userHandler := userhttp.NewHandler(svc, sugar)
-	teamHandler := teamhttp.NewHandler(svc, sugar)
-	pullrequestHandler := pullrequesthttp.NewHandler(svc, sugar)
+	userHandler := userhandler.NewHandler(svc, sugar)
+	teamHandler := teamhandlers.NewHandler(svc, sugar)
+	pullrequestHandler := pullreqhandler.NewHandler(svc, sugar)
 
 	// Mux 
 	mux := http.NewServeMux()

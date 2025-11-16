@@ -16,10 +16,15 @@ func New(db *sql.DB) *Repo {
 	return &Repo{db}
 }
 
-// Save saves new user
+// Save saves new user. if exists -> update
 func (r *Repo) Save(ctx context.Context, u *user.User) error {
 	const q = `INSERT INTO users (user_id, user_name, team_name, is_active)
-			   VALUES ($1, $2, $3, $4)`
+				VALUES ($1, $2, $3, $4)
+				ON CONFLICT (user_id) DO UPDATE
+				SET user_name = EXCLUDED.user_name,
+					team_name = EXCLUDED.team_name,
+					is_active = EXCLUDED.is_active;
+			`
 
 	_, err := r.db.ExecContext(ctx, q, u.UserID, u.Name, u.TeamName, u.IsActive)
 	if err != nil {

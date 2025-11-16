@@ -20,7 +20,7 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if r.Method != http.MethodPost {
-		httperror.WriteBadRequest(w, "bad method")
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -34,6 +34,7 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 		Name:    req.TeamName,
 		Members: UsersFromMembers(req.Members, req.TeamName),
 	}
+
 	ctx := r.Context()
 	t, usrs, err := h.CreateTeam(ctx, cmd)
 	if err != nil {
@@ -48,7 +49,7 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 	var resp AddTeamResponseDTO
 	resp.Team = teamhttp.TeamToDTO(t, usrs)
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(&resp); err != nil {
 		h.logger.Errorf("team add: json encode: %w", err)
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
