@@ -9,6 +9,7 @@ import (
 type Service interface {
 	CreateUser(ctx context.Context, u *user.User) (*user.User, error)
 	GetByID(ctx context.Context, id user.ID) (*user.User, error)
+	GetByIDs(ctx context.Context, ids []user.ID) ([]*user.User, error)
 	DeleteByID(ctx context.Context, id user.ID) error
 	UpdateActive(ctx context.Context, cmd UpdateActiveCommand) (*user.User, error)
 }
@@ -24,18 +25,25 @@ func New(repo user.Repo) Service {
 func (svc *service) CreateUser(ctx context.Context, u *user.User) (*user.User, error) {
 	err := svc.userRepo.Save(ctx, u)
 	if err != nil {
-		return nil, fmt.Errorf("create user: %w", err)
+		return nil, fmt.Errorf("user service: create user: user id: %s: %w", u.UserID, err)
 	}
 
 	return u, nil
 }
 
-func (svc *service) GetByID(ctx context.Context, userID user.ID) (*user.User, error) {
+func (svc *service) GetByIDs(ctx context.Context, ids []user.ID) ([]*user.User, error) {
 
+	users, err := svc.userRepo.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("get users by ids: %w", err)
+	}
+	return users, nil
+}
+
+func (svc *service) GetByID(ctx context.Context, userID user.ID) (*user.User, error) {
 	u, err := svc.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user by id %s: %w", userID, err)
-
 	}
 	return u, nil
 }

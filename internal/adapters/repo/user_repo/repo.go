@@ -23,7 +23,7 @@ func (r *Repo) Save(ctx context.Context, u *user.User) error {
 
 	_, err := r.db.ExecContext(ctx, q, u.UserID, u.Name, u.TeamName, u.IsActive)
 	if err != nil {
-		return fmt.Errorf("save: user: %s: %w", u.UserID, err)
+		return fmt.Errorf("user repo: save: user: %s: %w", u.UserID, err)
 	}
 
 	return nil
@@ -48,6 +48,35 @@ func (r *Repo) GetByID(ctx context.Context, id user.ID) (*user.User, error) {
 
 	return userModelToDomain(&u), nil
 
+}
+
+// GetByIDs returns users by IDs
+func (r *Repo) GetByIDs(ctx context.Context, ids []user.ID) ([]*user.User, error) {
+	const q = `
+		SELECT user_id, user_name, team_name, is_active
+		FROM users
+		WHERE user_id = ANY($1)
+	`
+	rows, err := r.db.QueryContext(ctx, q, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*user.User
+	for rows.Next() {
+		u := new(user.User)
+		if err := rows.Scan(&u.UserID, &u.Name, &u.TeamName, &u.IsActive); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 // UpdateActive updates user's active status

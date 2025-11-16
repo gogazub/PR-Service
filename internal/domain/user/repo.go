@@ -13,6 +13,9 @@ type Repo interface {
 	// GetByID returns user by ID
 	GetByID(ctx context.Context, id ID) (*User, error)
 
+	// GetByIDs returns users by IDs
+	GetByIDs(ctx context.Context, id []ID) ([]*User, error)
+
 	// UpdateActive updates user's active status
 	UpdateActive(ctx context.Context, id ID, isActive bool) (*User, error)
 

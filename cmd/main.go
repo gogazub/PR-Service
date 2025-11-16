@@ -99,6 +99,7 @@ func main() {
 	// Server
 	
 	port := ":"+cfg.HTTPPort
+	sugar.Info("HTTP server started on ", port)
 	err = http.ListenAndServe(port, mux)
 	if err != nil {
 		fmt.Println(err.Error())

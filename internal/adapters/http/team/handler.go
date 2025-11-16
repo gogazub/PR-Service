@@ -1,27 +1,43 @@
 package teamhttp
 
 import (
-	"PRService/internal/app"
-	"net/http"
-
-	"go.uber.org/zap"
+	"PRService/internal/domain/user"
 )
 
-type Handler struct {
-	*app.Services
-	logger *zap.SugaredLogger
+
+
+func UsersFromMembers(members []TeamMemberDTO, teamName string) []*user.User{
+	users := make([]*user.User, 0, len(members))
+	for _, member := range members {
+		u := memberToUser(&member, teamName)
+		users = append(users, u)
+	}
+	return users
 }
 
-// NewHandler returns new Handler.
-func NewHandler(app *app.Services, logger *zap.SugaredLogger) *Handler {
-	return &Handler{app, logger}
+func MembersFromUsers(usrs []*user.User) []TeamMemberDTO {
+	members := make([]TeamMemberDTO, 0, len(usrs))
+	for _, u := range usrs {
+		member := userToMember(u)
+		members = append(members, member)
+	}
+	return members
 }
 
-// POST /team/add
-func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
+func memberToUser(member *TeamMemberDTO, teamName string) *user.User {
+	u := &user.User{
+		UserID: user.ID(member.UserID),
+		Name: member.Username,
+		TeamName: teamName,
+		IsActive: member.IsActive,
+	}
+	return u
 }
 
-// GET /team/get?team_name=...
-func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
-
+func userToMember(u *user.User) TeamMemberDTO {
+	member := new(TeamMemberDTO)
+	member.UserID = string(u.UserID)
+	member.Username = u.Name
+	member.IsActive = u.IsActive
+	return *member
 }

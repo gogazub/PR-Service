@@ -16,15 +16,6 @@ type TeamDTO struct {
 	Members  []TeamMemberDTO `json:"members"`
 }
 
-type AddTeamRequestDTO = TeamDTO
-type AddTeamResponseDTO struct {
-	Team TeamDTO `json:"team"`
-}
-
-type GetTeamQueryDTO struct {
-	TeamName string `query:"team_name"`
-}
-
 func TeamToDTO(t *team.Team, users []*user.User) TeamDTO {
     dto := TeamDTO{
         TeamName: t.Name,

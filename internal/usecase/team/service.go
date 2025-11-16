@@ -37,13 +37,14 @@ func (svc *service) Save(ctx context.Context, t *team.Team) (*team.Team, error) 
 }
 
 func (svc *service) CreateTeam(ctx context.Context, cmd CreateTeamCommand) (*team.Team, error) {
+
 	t := team.NewTeam(
 		cmd.Name,
 		cmd.Members,
 	)
 
 	if err := svc.teamRepo.Save(ctx, t); err != nil {
-		return nil, fmt.Errorf("create team: %w", err)
+		return nil, fmt.Errorf("team service: create team: team: %q: %w", t.Name, err)
 	}
 
 	return t, nil

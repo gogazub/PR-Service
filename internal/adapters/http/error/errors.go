@@ -1,5 +1,10 @@
 package httperror
 
+import (
+	"encoding/json"
+	"net/http"
+)
+
 type ErrorCode string
 
 const (
@@ -20,4 +25,29 @@ type ErrorDTO struct {
 
 type ErrorResponseDTO struct {
 	Error ErrorDTO `json:"error"`
+}
+
+
+// Так как в спецификации нет подходящей ошибки invalid json,
+// то вынуждено проставим ErrorCodeNotFound и пояснения в message
+func WriteBadRequest(w http.ResponseWriter, msg string) {
+	w.WriteHeader(http.StatusBadRequest)
+	// TODO: process error
+	json.NewEncoder(w).Encode(ErrorResponseDTO{
+		Error: ErrorDTO{
+			Code:    ErrorCodeNotFound,
+			Message: msg,
+		},
+	})
+}
+
+func WriteErrorResponse(w http.ResponseWriter, status int, code ErrorCode, msg string) {
+	w.WriteHeader(status)
+	// process error
+	json.NewEncoder(w).Encode(ErrorResponseDTO{
+		Error: ErrorDTO{
+			Code:    code,
+			Message: msg,
+		},
+	})
 }
