@@ -37,3 +37,10 @@ func NewPullRequest(id string, name string, author user.ID, status Status, revie
 	}
 	return pr
 }
+
+func StatusToString(s Status) string {
+	if s == OPEN {
+		return "OPEN"
+	}
+	return "MERGED"
+}

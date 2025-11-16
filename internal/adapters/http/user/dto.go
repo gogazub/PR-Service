@@ -1,6 +1,9 @@
 package userhttp
 
-import "PRService/internal/domain/user"
+import (
+	"PRService/internal/domain/pullrequest"
+	"PRService/internal/domain/user"
+)
 
 type UserDTO struct {
 	UserID   string `json:"user_id"`
@@ -36,11 +39,29 @@ type GetUserReviewResponseDTO struct {
 	PullRequests []PullRequestShortDTO `json:"pull_requests"`
 }
 
-func UserToDTO(u *user.User) *UserDTO{
+func UserToDTO(u *user.User) *UserDTO {
 	return &UserDTO{
-		UserID: string(u.UserID),
+		UserID:   string(u.UserID),
 		Username: u.Name,
+		TeamName: u.TeamName,
 		IsActive: u.IsActive,
-		TeamName: "", // TODO
 	}
+}
+
+func PullRequestToShortDTO(pr *pullrequest.PullRequest) *PullRequestShortDTO {
+	return &PullRequestShortDTO{
+		PullRequestID:   string(pr.PullRequestID),
+		PullRequestName: pr.Name,
+		AuthorID:        string(pr.Author),
+		Status:          pullrequest.StatusToString(pr.Status),
+	}
+}
+
+func PullRequestsToReviewResponseDTO(userID string, prs []*pullrequest.PullRequest) *GetUserReviewResponseDTO {
+	resp := new(GetUserReviewResponseDTO)
+	resp.UserID = userID
+	for _, pr := range prs {
+		resp.PullRequests = append(resp.PullRequests, *PullRequestToShortDTO(pr))
+	}
+	return resp
 }
