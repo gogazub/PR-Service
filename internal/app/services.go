@@ -58,6 +58,10 @@ func (svc *Services) CreateTeam(ctx context.Context, cmd team_usecase.CreateTeam
 func (svc *Services) CreatePR(ctx context.Context, cmd pullrequest_usecase.CreatePRCommand) (*pullrequest.PullRequest, error) {
 	// TODO: делать все операции под общей tx
 
+	if pr, _ := svc.PullRequest.GetByID(ctx,pullrequest.ID(cmd.ID)); pr != nil {
+		return nil, pullrequest.ErrPullRequestExists
+	}
+	
 	// 1. get user
 	u, err := svc.User.GetByID(ctx, cmd.Author)
 	if err != nil {
