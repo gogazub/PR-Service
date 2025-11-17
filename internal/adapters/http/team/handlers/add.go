@@ -42,7 +42,7 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 			httperror.WriteErrorResponse(w, http.StatusBadRequest, httperror.ErrorCodeTeamExists, "team is already exists")
 			return
 		}
-		h.logger.Errorf("create team: %w", err)
+		h.logger.Error("create team failed", "error", err)
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
 		return
 	}
@@ -51,7 +51,7 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(&resp); err != nil {
-		h.logger.Errorf("team add: json encode: %w", err)
+		h.logger.Error("team add failed: JSON encoding", "error", err)
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
 		return
 	}

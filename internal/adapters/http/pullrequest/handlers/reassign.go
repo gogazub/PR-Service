@@ -69,8 +69,17 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 			)
 			return
 		}
+		if errors.Is(err, pullrequest.ErrPullRequestNotFound) {
+			httperror.WriteErrorResponse(
+				w,
+				http.StatusNotFound,
+				httperror.ErrorCodeNotFound,
+				err.Error(),
+			)
+			return
+		}
 
-		h.logger.Errorf("reassign: %w", err)
+		h.logger.Error("reassign failed", "error", err)
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
 		return
 	}
@@ -78,6 +87,6 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	resp := PRToDTO(pr)
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Errorf("reassign: json encode: ", err)
+		h.logger.Error("reassign failed: JSON encoding error", "error", err)
 	}
 }

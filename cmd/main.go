@@ -34,14 +34,13 @@ func main() {
 	cfg, err := config.NewConfig()
 
 	if err != nil {
-		logger.Fatal("load config", "error", err)
+		logger.Fatal("new config", "error", err)
 	}
 
 	// Postgres
 	dsn := cfg.PG.URL
-	
 
-	logger.Info("try postgres conntection ", "address ", dsn)
+	logger.Info("try postgres connection", "address", dsn)
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		logger.Fatal("failed to open postgres", "error", err)
@@ -89,7 +88,7 @@ func main() {
 	
 	port := cfg.HTTP.PORT
 	port = ":"+port
-	logger.Info("HTTP server started on ", port)
+	logger.Info("HTTP server started on", "port", port)
 	err = http.ListenAndServe(port, mux)
 	if err != nil {
 		fmt.Println(err.Error())

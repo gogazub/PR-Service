@@ -35,7 +35,7 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 			httperror.WriteErrorResponse(w, http.StatusBadRequest, httperror.ErrorCodeNotFound, "not found")
 			return
 		}
-		h.logger.Errorf("get team: %w", err)
+		h.logger.Error("get team failed", "error", err)
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
 		return
 	}
@@ -43,7 +43,7 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 	// 2. get users
 	users, err := h.Services.User.GetByIDs(ctx, t.Members)
 	if err != nil {
-		h.logger.Errorf("get team: %w", err)
+		h.logger.Error("get team failed", "error", err)
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "internal error")
 		return
 	}
@@ -59,7 +59,7 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Errorf("get team: json encode: %w", err)
+		h.logger.Error("get team failed: JSON encoding error", "error", err)
 	}
 
 }

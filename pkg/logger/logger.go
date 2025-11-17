@@ -24,23 +24,35 @@ func New() (*Logger, error) {
 }
 
 func (l *Logger) Info(msg string, args ...interface{}) {
-	l.logger.Infow(msg, args...)
+	if len(args) > 0 {
+		l.logger.Infow(msg, args...)
+	} else {
+		l.logger.Info(msg)
+	}
 }
 
 func (l *Logger) Warn(msg string, args ...interface{}) {
-	l.logger.Warnw(msg, args...)
+	if len(args) > 0 {
+		l.logger.Warnw(msg, args...)
+	} else {
+		l.logger.Warn(msg)
+	}
 }
 
 func (l *Logger) Error(msg string, args ...interface{}) {
-	l.logger.Errorw(msg, args...)
-}
-
-func (l *Logger) Errorf(msg string, args ...interface{}){
-	l.logger.Errorf(msg,args)
+	if len(args) > 0 {
+		l.logger.Errorw(msg, args...)
+	} else {
+		l.logger.Error(msg)
+	}
 }
 
 func (l *Logger) Fatal(msg string, args ...interface{}) {
-	l.logger.Fatalw(msg, args...)
+	if len(args) > 0 {
+		l.logger.Fatalw(msg, args...)
+	} else {
+		l.logger.Fatal(msg)
+	}
 }
 
 func (l *Logger) Sync() error {

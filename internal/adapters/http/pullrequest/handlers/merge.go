@@ -54,7 +54,7 @@ func (h *Handler) MergePullRequest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.logger.Errorf("merge pr: update status: %w", err)
+		h.logger.Error("merge PR failed: update status failed", "error", err)
 		httperror.WriteErrorResponse(
 			w,
 			http.StatusInternalServerError,
@@ -65,11 +65,11 @@ func (h *Handler) MergePullRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := MergePullRequestResponse{
-		PR : PRToDTO(pr),
+		PR: PRToDTO(pr),
 	}
 
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Errorf("merge pr: json encode: %v", err)
+		h.logger.Error("merge PR failed: JSON encoding error", "error", err)
 	}
 }
