@@ -2,16 +2,15 @@ package userhandler
 
 import (
 	"PRService/internal/app"
-
-	"go.uber.org/zap"
+	"PRService/pkg/logger"
 )
 
 type Handler struct {
 	*app.Services
-	logger *zap.SugaredLogger
+	logger *logger.Logger
 }
 
 // NewHandler returns new Handler.
-func NewHandler(app *app.Services, logger *zap.SugaredLogger) *Handler {
+func NewHandler(app *app.Services, logger *logger.Logger) *Handler {
 	return &Handler{app, logger}
 }

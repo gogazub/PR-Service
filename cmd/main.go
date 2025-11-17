@@ -12,51 +12,46 @@ import (
 	pullrequest_usecase "PRService/internal/usecase/pullrequest"
 	team_usecase "PRService/internal/usecase/team"
 	user_usecase "PRService/internal/usecase/user"
+	"PRService/pkg/logger"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
-
-	"go.uber.org/zap"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
 
-	// Logger
-	logger, err := zap.NewDevelopmentConfig().Build()
-
+	logger, err := logger.New()
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 	defer logger.Sync()
 
-	sugar := logger.Sugar()
-
 	// Config
 	cfg, err := config.NewConfig()
 
 	if err != nil {
-		sugar.Fatalw("load config", "error", err)
+		logger.Fatal("load config", "error", err)
 	}
 
 	// Postgres
 	dsn := cfg.PG.URL
 	
 
-	sugar.Info("try postgres conntection ", "address ", dsn)
+	logger.Info("try postgres conntection ", "address ", dsn)
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		sugar.Fatalw("failed to open postgres", "error", err)
+		logger.Fatal("failed to open postgres", "error", err)
 	}
 
 	if err := db.Ping(); err != nil {
-		sugar.Fatal("failed to ping postgres", "error", err)
+		logger.Fatal("failed to ping postgres", "error", err)
 	}
 
-	sugar.Info("connected to postgres")
+	logger.Info("connected to postgres")
 
 	// Repositories
 
@@ -71,9 +66,9 @@ func main() {
 	svc := app.NewServices(userSvc, teamSvc, pullrequestSvc)
 
 	// Handlers
-	userHandler := userhandler.NewHandler(svc, sugar)
-	teamHandler := teamhandlers.NewHandler(svc, sugar)
-	pullrequestHandler := pullreqhandler.NewHandler(svc, sugar)
+	userHandler := userhandler.NewHandler(svc, logger)
+	teamHandler := teamhandlers.NewHandler(svc, logger)
+	pullrequestHandler := pullreqhandler.NewHandler(svc, logger)
 
 	// Mux 
 	mux := http.NewServeMux()
@@ -94,7 +89,7 @@ func main() {
 	
 	port := cfg.HTTP.PORT
 	port = ":"+port
-	sugar.Info("HTTP server started on ", port)
+	logger.Info("HTTP server started on ", port)
 	err = http.ListenAndServe(port, mux)
 	if err != nil {
 		fmt.Println(err.Error())
