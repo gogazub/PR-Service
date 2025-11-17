@@ -1,6 +1,7 @@
 package main
 
 import (
+	"PRService/config"
 	pullreqhandler "PRService/internal/adapters/http/pullrequest/handlers"
 	teamhandlers "PRService/internal/adapters/http/team/handlers"
 	userhandler "PRService/internal/adapters/http/user/handler"
@@ -8,7 +9,6 @@ import (
 	teamrepo "PRService/internal/adapters/repo/team_repo"
 	userrepo "PRService/internal/adapters/repo/user_repo"
 	"PRService/internal/app"
-	"PRService/internal/config"
 	pullrequest_usecase "PRService/internal/usecase/pullrequest"
 	team_usecase "PRService/internal/usecase/team"
 	user_usecase "PRService/internal/usecase/user"
@@ -25,7 +25,7 @@ import (
 func main() {
 
 	// Logger
-	logger, err  := zap.NewDevelopmentConfig().Build()
+	logger, err := zap.NewDevelopmentConfig().Build()
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -36,21 +36,15 @@ func main() {
 	sugar := logger.Sugar()
 
 	// Config
-	cfg, err := config.LoadConfig()
+	cfg, err := config.NewConfig()
+
 	if err != nil {
 		sugar.Fatalw("load config", "error", err)
 	}
 
 	// Postgres
-	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		cfg.PGUser,
-		cfg.PGPassword,
-		cfg.PGHost,
-		cfg.PGPort,
-		cfg.PGDatabase,
-		cfg.SSLMode,
-	)
+	dsn := cfg.PG.URL
+	
 
 	sugar.Info("try postgres conntection ", "address ", dsn)
 	db, err := sql.Open("postgres", dsn)
@@ -98,7 +92,8 @@ func main() {
 
 	// Server
 	
-	port := ":"+cfg.HTTPPort
+	port := cfg.HTTP.PORT
+	port = ":"+port
 	sugar.Info("HTTP server started on ", port)
 	err = http.ListenAndServe(port, mux)
 	if err != nil {

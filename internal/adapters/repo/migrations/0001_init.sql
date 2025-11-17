@@ -38,20 +38,6 @@ CREATE TABLE pull_requests (
     deleted_at TIMESTAMPTZ NULL
 );
 
--- 1. Активные юзеры
-CREATE INDEX idx_users_team_active
-    ON users(team_name, is_active)
-    WHERE deleted_at IS NULL;
-
--- 2. pr по reviewer
-CREATE INDEX idx_pr_reviewers_user_id
-    ON pr_reviewers(user_id);
-
--- 3. pr по автору
-CREATE INDEX idx_pull_requests_author
-    ON pull_requests(author_id)
-    WHERE deleted_at IS NULL;
-
 --- Отношения между основными таблицами ---
 
 -- Допустим, что юзер может находится сразу в двух командах. Тогда имеем one to many.
@@ -70,6 +56,19 @@ CREATE TABLE pr_reviewers (
     -- assigned_at
 );
 
+-- 1. Активные юзеры
+CREATE INDEX idx_users_team_active
+    ON users(team_name, is_active)
+    WHERE deleted_at IS NULL;
+
+-- 2. pr по reviewer
+CREATE INDEX idx_pr_reviewers_user_id
+    ON pr_reviewers(user_id);
+
+-- 3. pr по автору
+CREATE INDEX idx_pull_requests_author
+    ON pull_requests(author_id)
+    WHERE deleted_at IS NULL;
 
 --- Функции ---
 
@@ -99,3 +98,6 @@ CREATE TRIGGER pull_requests_updated_timestamp
 BEFORE UPDATE ON pull_requests
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
+
+
+
