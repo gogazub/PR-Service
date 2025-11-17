@@ -10,7 +10,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
-      - ./internal/adapters/repo/migrations/0001_init.sql:/docker-entrypoint-initdb.d/0001_init.sql
+      - ./migrations/0001_init.sql:/docker-entrypoint-initdb.d/0001_init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 3s
