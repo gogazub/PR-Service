@@ -14,9 +14,12 @@ import (
 	user_usecase "PRService/internal/usecase/user"
 	"PRService/pkg/logger"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -69,7 +72,7 @@ func main() {
 	teamHandler := teamhandlers.NewHandler(svc, logger)
 	pullrequestHandler := pullreqhandler.NewHandler(svc, logger)
 
-	// Mux 
+	// Mux
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/users/setIsActive", userHandler.SetIsActive)
@@ -81,13 +84,12 @@ func main() {
 	mux.HandleFunc("/pullRequest/create", pullrequestHandler.CreatePullRequest)
 	mux.HandleFunc("/pullRequest/merge", pullrequestHandler.MergePullRequest)
 	mux.HandleFunc("/pullRequest/reassign", pullrequestHandler.ReassignReviewer)
-	
-	mux.HandleFunc("/health", HealtHandler)
+
+	mux.HandleFunc("/health", HealthHandler)
 
 	// Server
-	
 	port := cfg.HTTP.PORT
-	port = ":"+port
+	port = ":" + port
 	logger.Info("HTTP server started on", "port", port)
 	err = http.ListenAndServe(port, mux)
 	if err != nil {
@@ -96,11 +98,25 @@ func main() {
 
 }
 
-// TODO: refactor
-func HealtHandler(w http.ResponseWriter, _ *http.Request) {
-	fmt.Println("get a new request")
-	w.WriteHeader(http.StatusOK)
-	w.Header().Add("Content-type", "text/plain")
-	str := "Server is working!"
-	_, _ = w.Write([]byte(str))
+type healthResponse struct {
+    Status  string `json:"status"`
+    Message string `json:"message"`
+    Time    string `json:"timestamp"`
+}
+
+func HealthHandler(w http.ResponseWriter, r *http.Request) {
+    log.Printf("Health check from %s", r.RemoteAddr)
+    
+    response := healthResponse{
+        Status:  "healthy",
+        Message: "Server is working properly",
+        Time:    time.Now().UTC().Format(time.RFC3339),
+    }
+    
+    w.Header().Set("Content-Type", "application/json")
+    
+    if err := json.NewEncoder(w).Encode(response); err != nil {
+        log.Printf("Failed to encode health response: %v", err)
+        http.Error(w, "Internal server error", http.StatusInternalServerError)
+    }
 }
