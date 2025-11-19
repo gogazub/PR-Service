@@ -5,9 +5,9 @@ import (
 	pullreqhandler "PRService/internal/adapters/http/pullrequest/handlers"
 	teamhandlers "PRService/internal/adapters/http/team/handlers"
 	userhandler "PRService/internal/adapters/http/user/handler"
-	pullrequestrepo "PRService/internal/adapters/repo/pullrequest_repo"
-	teamrepo "PRService/internal/adapters/repo/team_repo"
-	userrepo "PRService/internal/adapters/repo/user_repo"
+	pullrequestrepo "PRService/internal/adapters/repo/pullrequest"
+	teamrepo "PRService/internal/adapters/repo/team"
+	userrepo "PRService/internal/adapters/repo/user"
 	"PRService/internal/app"
 	pullrequest_usecase "PRService/internal/usecase/pullrequest"
 	team_usecase "PRService/internal/usecase/team"
@@ -25,7 +25,6 @@ import (
 )
 
 func main() {
-
 	logger, err := logger.New()
 	if err != nil {
 		fmt.Println(err.Error())

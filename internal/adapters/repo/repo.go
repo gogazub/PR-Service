@@ -1,9 +1,9 @@
 package repo
 
 import (
-	pullrequestrepo "PRService/internal/adapters/repo/pullrequest_repo"
-	teamrepo "PRService/internal/adapters/repo/team_repo"
-	userrepo "PRService/internal/adapters/repo/user_repo"
+	pullrequestrepo "PRService/internal/adapters/repo/pullrequest"
+	teamrepo "PRService/internal/adapters/repo/team"
+	userrepo "PRService/internal/adapters/repo/user"
 )
 
 type Repository struct {
