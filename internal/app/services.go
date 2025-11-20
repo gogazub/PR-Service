@@ -80,28 +80,34 @@ func (svc *Services) CreatePR(ctx context.Context, cmd pullrequest_usecase.Creat
 
 	// 3. get active users
 	activeMembers, err := svc.Team.GetActiveUsersInTeam(ctx, t.Name)
-
 	if err != nil {
 		return nil, fmt.Errorf("service: create pr: get active users in team: %q: %w", t.Name, err)
 	}
 
 	// 4. chose at most 2 reviewers
-	rand.Shuffle(len(activeMembers), func(i, j int) {
-		activeMembers[i], activeMembers[j] = activeMembers[j], activeMembers[i]
+	candidates := make([]*user.User, 0, len(activeMembers))
+	for _, member := range activeMembers {
+		if member.UserID != cmd.Author {
+			candidates = append(candidates, member)
+		}
+	}
+
+	rand.Shuffle(len(candidates), func(i, j int) {
+		candidates[i], candidates[j] = candidates[j], candidates[i]
 	})
-	reviewers := activeMembers[:min(2, len(activeMembers))]
+	
+	reviewers := candidates[:min(2, len(candidates))]
 	reviewersIDs := make([]user.ID, 0)
 	for _, u := range reviewers {
 		reviewersIDs = append(reviewersIDs, u.UserID)
 	}
 
 	pr := pullrequest.NewPullRequest(cmd.ID, cmd.Name, cmd.Author, pullrequest.OPEN, reviewersIDs)
-	// 5. save pr
+	
 	if err = svc.PullRequest.Save(ctx, pr); err != nil {
 		return nil, fmt.Errorf("service: create pr: %w", err)
 	}
 	return pr, nil
-
 }
 
 
@@ -111,14 +117,14 @@ type ReassignReviewerCommand struct {
 	NewReviewerID  user.ID // будет заполнен в сервисе
 }
 
-func (svc *Services) ReassignReviewer( ctx context.Context, cmd pullrequest_usecase.ReassignReviewerCommand, ) (*pullrequest.PullRequest, error) {
+func (svc *Services) ReassignReviewer(ctx context.Context, cmd pullrequest_usecase.ReassignReviewerCommand) (*pullrequest.PullRequest, user.ID, error) {
 	pr, err := svc.PullRequest.GetByID(ctx, cmd.PullRequestID)
 	if err != nil {
-		return nil, fmt.Errorf("service: reassign reviewer: get pr: %w", err)
+		return nil, "", fmt.Errorf("service: reassign reviewer: get pr: %w", err)
 	}
 
 	if pr.Author == "" {
-		return nil, pullrequest.ErrNoAuthor
+		return nil, "", pullrequest.ErrNoAuthor
 	}
 
 	oldIdx := -1
@@ -129,17 +135,17 @@ func (svc *Services) ReassignReviewer( ctx context.Context, cmd pullrequest_usec
 		}
 	}
 	if oldIdx == -1 {
-		return nil, pullrequest.ErrReviewerNotAssigned
+		return nil, "", pullrequest.ErrReviewerNotAssigned
 	}
 
 	author, err := svc.User.GetByID(ctx, pr.Author)
 	if err != nil {
-		return nil, fmt.Errorf("service: reassign reviewer: get author: %w", err)
+		return nil, "", fmt.Errorf("service: reassign reviewer: get author: %w", err)
 	}
 
 	users, err := svc.Team.GetActiveUsersInTeam(ctx, author.TeamName)
 	if err != nil {
-		return nil, fmt.Errorf("service: reassign reviewer: get team users: %w", err)
+		return nil, "", fmt.Errorf("service: reassign reviewer: get team users: %w", err)
 	}
 
 	candidates := make([]user.ID, 0, len(users))
@@ -167,7 +173,7 @@ func (svc *Services) ReassignReviewer( ctx context.Context, cmd pullrequest_usec
 	}
 
 	if len(candidates) == 0 {
-		return nil, pullrequest.ErrNoCandidate
+		return nil, "", pullrequest.ErrNoCandidate
 	}
 
 	newIdx := rand.Intn(len(candidates))
@@ -175,14 +181,13 @@ func (svc *Services) ReassignReviewer( ctx context.Context, cmd pullrequest_usec
 	cmd.NewReviewerID = newReviewerID
 
 	if err := svc.PullRequest.ReassignReviewers(ctx, cmd); err != nil {
-		return nil, fmt.Errorf("service: reassign reviewer: %w", err)
+		return nil, "", fmt.Errorf("service: reassign reviewer: %w", err)
 	}
 
 	updated := *pr
 	updated.Reviewers = make([]user.ID, len(pr.Reviewers))
 	copy(updated.Reviewers, pr.Reviewers)
-
 	updated.Reviewers[oldIdx] = newReviewerID
 
-	return &updated, nil
+	return &updated, newReviewerID, nil
 }

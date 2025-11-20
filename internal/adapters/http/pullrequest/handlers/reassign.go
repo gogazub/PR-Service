@@ -27,6 +27,7 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		httperror.WriteBadRequest(w, "bad method")
+		return
 	}
 
 	var req ReassignReviewerRequest
@@ -42,7 +43,8 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	pr, err := h.Services.ReassignReviewer(ctx, cmd)
+
+	pr, newReviewerID, err := h.Services.ReassignReviewer(ctx, cmd)
 	if err != nil {
 		if errors.Is(err, pullrequest.ErrNoAuthor) {
 			httperror.WriteErrorResponse(w, http.StatusNotFound, httperror.ErrorCodeBadRequest, "no author")
@@ -84,7 +86,11 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := PRToDTO(pr)
+	resp := ReassignReviewerResponse{
+		PR:         PRToDTO(pr),
+		ReplacedBy: string(newReviewerID),
+	}
+
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Error("reassign failed: JSON encoding error", "error", err)

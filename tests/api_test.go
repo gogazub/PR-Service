@@ -165,7 +165,7 @@ func TestPullRequestLifecycle(t *testing.T) {
 	}
 }
 
-// 4. Reassign Reviewer
+// 4. Сложный сценарий: Reassign Reviewer
 func TestReassignReviewer(t *testing.T) {
 	suffix := RandomSuffix()
 	teamName := "reassign_team_" + suffix
@@ -186,44 +186,32 @@ func TestReassignReviewer(t *testing.T) {
 		},
 	})
 
-	// 2. Создаем PR (назначится 2 из 3: например R1, R2. Останется R3 свободным)
-	DoPostJSON(t, "/pullRequest/create", map[string]string{
+	// 2. Создаем PR
+	respCreate, dataCreate := DoPostJSON(t, "/pullRequest/create", map[string]string{
 		"pull_request_id":   prID,
 		"pull_request_name": "Swap Test",
 		"author_id":         author,
 	})
+	AssertStatus(t, respCreate, http.StatusCreated, dataCreate)
 
-	// Найдем того, кто назначен.
-	var oldReviewer string
-	// Попробуем заменить r1
+	var createResp CreatePRResponse
+	DecodeJSON(t, dataCreate, &createResp, "create pr response")
+
+	// Берем того, кто был назначен системой
+	if len(createResp.PR.AssignedReviewers) == 0 {
+		t.Fatal("no reviewers assigned automatically, cannot test reassign")
+	}
+	// Берем первого попавшегося назначенного ревьювера для замены
+	oldReviewerID := createResp.PR.AssignedReviewers[0]
+
+	// 3. Делаем Reassign
 	reassignReq := map[string]string{
 		"pull_request_id": prID,
-		"old_user_id":     r1,
+		"old_user_id":     oldReviewerID,
 	}
 
 	resp, data := DoPostJSON(t, "/pullRequest/reassign", reassignReq)
-
-	// Если R1 не был ревьювером, API вернет 409 NOT_ASSIGNED. Тогда попробуем R3 (так как всего 3 кандидата, а выбрано 2, кто-то точно ревьювер)
-	if resp.StatusCode == http.StatusConflict {
-		errDto := DecodeError(t, data)
-		if errDto.Error.Code == "NOT_ASSIGNED" {
-			oldReviewer = r3
-		} else {
-			t.Fatalf("unexpected error during reassign check: %s", errDto.Error.Message)
-		}
-	} else if resp.StatusCode == http.StatusOK {
-		oldReviewer = r1
-	} else {
-		t.Fatalf("unexpected status check: %d body: %s", resp.StatusCode, string(data))
-	}
-
-	// Если в первый раз сработало, мы уже сделали замену.
-	// Если нет, делаем запрос с правильным oldReviewer
-	if oldReviewer != r1 {
-		reassignReq["old_user_id"] = oldReviewer
-		resp, data = DoPostJSON(t, "/pullRequest/reassign", reassignReq)
-		AssertStatus(t, resp, http.StatusOK, data)
-	}
+	AssertStatus(t, resp, http.StatusOK, data)
 
 	var reassignResp ReassignResponseDTO
 	DecodeJSON(t, data, &reassignResp, "reassign")
@@ -232,7 +220,7 @@ func TestReassignReviewer(t *testing.T) {
 	if reassignResp.ReplacedBy == "" {
 		t.Error("expected replaced_by to be set")
 	}
-	if reassignResp.ReplacedBy == oldReviewer {
+	if reassignResp.ReplacedBy == oldReviewerID {
 		t.Error("reviewer should be different")
 	}
 
@@ -240,7 +228,7 @@ func TestReassignReviewer(t *testing.T) {
 	isOldPresent := false
 	isNewPresent := false
 	for _, r := range reassignResp.PR.AssignedReviewers {
-		if r == oldReviewer {
+		if r == oldReviewerID {
 			isOldPresent = true
 		}
 		if r == reassignResp.ReplacedBy {
@@ -249,7 +237,7 @@ func TestReassignReviewer(t *testing.T) {
 	}
 
 	if isOldPresent {
-		t.Errorf("old reviewer %s should be removed", oldReviewer)
+		t.Errorf("old reviewer %s should be removed", oldReviewerID)
 	}
 	if !isNewPresent {
 		t.Errorf("new reviewer %s should be present", reassignResp.ReplacedBy)
@@ -276,16 +264,24 @@ func TestReassignNoCandidate(t *testing.T) {
 	})
 
 	prID := "pr_nocand_" + suffix
-	DoPostJSON(t, "/pullRequest/create", map[string]string{
+	respCreate, dataCreate := DoPostJSON(t, "/pullRequest/create", map[string]string{
 		"pull_request_id":   prID,
 		"pull_request_name": "Test",
 		"author_id":         author,
 	})
+	AssertStatus(t, respCreate, http.StatusCreated, dataCreate)
 
-	// Пытаемся заменить r1
+	var createResp CreatePRResponse
+	DecodeJSON(t, dataCreate, &createResp, "create pr response")
+
+	if len(createResp.PR.AssignedReviewers) == 0 {
+		t.Fatal("no reviewers assigned")
+	}
+	targetReviewer := createResp.PR.AssignedReviewers[0]
+
 	resp, data := DoPostJSON(t, "/pullRequest/reassign", map[string]string{
 		"pull_request_id": prID,
-		"old_user_id":     r1,
+		"old_user_id":     targetReviewer,
 	})
 
 	AssertStatus(t, resp, http.StatusConflict, data)

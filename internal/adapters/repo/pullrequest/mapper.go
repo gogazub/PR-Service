@@ -11,9 +11,8 @@ func pullRequestModelToDomain(m PullRequestModel, reviewers []user.ID) *pullrequ
 		author = user.ID(m.AuthorID)
 	}
 
-	var reviewersArr []user.ID
-	for i := 0; i < len(reviewersArr) && i < len(reviewers); i++ {
-		reviewersArr = append(reviewersArr, reviewers[i])
+	if reviewers == nil {
+		reviewers = make([]user.ID, 0)
 	}
 
 	return &pullrequest.PullRequest{
@@ -21,21 +20,20 @@ func pullRequestModelToDomain(m PullRequestModel, reviewers []user.ID) *pullrequ
 		Name:          m.Name,
 		Author:        author,
 		Status:        pullrequest.StringToStatus(m.Status),
-		Reviewers:     reviewersArr,
+		Reviewers:     reviewers,
 	}
 }
 
-func pullRequestDomainToModel(pr *pullrequest.PullRequest) PullRequestModel {
-	// Может быть такое, что со временем автор pr будет удален.
-	authorID := ""
-	if pr.Author != "" {
-		authorID = string(pr.Author)
-	}
-
-	return PullRequestModel{
-		PRID:     string(pr.PullRequestID),
-		Name:     pr.Name,
-		AuthorID: authorID,
-		Status:   pullrequest.StatusToString(pr.Status),
-	}
-}
+// func pullRequestDomainToModel(pr *pullrequest.PullRequest) PullRequestModel {
+// 	// Может быть такое, что со временем автор pr будет удален.
+// 	authorID := ""
+// 	if pr.Author != "" {
+// 		authorID = string(pr.Author)
+// 	}
+// 	return PullRequestModel{
+// 		PRID:     string(pr.PullRequestID),
+// 		Name:     pr.Name,
+// 		AuthorID: authorID,
+// 		Status:   pullrequest.StatusToString(pr.Status),
+// 	}
+// }

@@ -32,7 +32,7 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 	t, err := h.Services.Team.GetByName(ctx, teamName)
 	if err != nil {
 		if errors.Is(err, team.ErrTeamNotFound) {
-			httperror.WriteErrorResponse(w, http.StatusBadRequest, httperror.ErrorCodeNotFound, "not found")
+			httperror.WriteErrorResponse(w, http.StatusNotFound, httperror.ErrorCodeNotFound, "not found")
 			return
 		}
 		h.logger.Error("get team failed", "error", err)
