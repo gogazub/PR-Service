@@ -1,6 +1,7 @@
 package teamrepo
 
 import (
+	"PRService/internal/adapters/repo/transactor"
 	"PRService/internal/domain/team"
 	"PRService/internal/domain/user"
 	"context"
@@ -10,35 +11,25 @@ import (
 )
 
 type Repo struct {
-	db *sql.DB
+	tx *transactor.Transactor
 }
 
 func New(db *sql.DB) *Repo {
-	return &Repo{db: db}
+	return &Repo{tx: transactor.NewTransactor(db)}
 }
 
 // Save saves new team
 func (r *Repo) Save(ctx context.Context, t *team.Team) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("save team: %w", err)
-	}
-
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	// достаем исполнителя (db или tx)
+	q := r.tx.ExtractReq(ctx)
 
 	const qTeam = `
 		INSERT INTO teams (team_name)
 		VALUES ($1)
 	`
 
-	if _, err := tx.ExecContext(ctx, qTeam, t.Name); err != nil {
+	if _, err := q.ExecContext(ctx, qTeam, t.Name); err != nil {
 		return fmt.Errorf("insert team: %w", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("save team: %w", err)
 	}
 
 	return nil
@@ -46,6 +37,8 @@ func (r *Repo) Save(ctx context.Context, t *team.Team) error {
 
 // GetByName returns team by name
 func (r *Repo) GetByName(ctx context.Context, name string) (*team.Team, error) {
+	q := r.tx.ExtractReq(ctx)
+
 	const qTeam = `
         SELECT team_name
         FROM teams
@@ -53,8 +46,7 @@ func (r *Repo) GetByName(ctx context.Context, name string) (*team.Team, error) {
     `
 
 	var tm TeamModel
-
-	row := r.db.QueryRowContext(ctx, qTeam, name)
+	row := q.QueryRowContext(ctx, qTeam, name)
 	if err := row.Scan(&tm.Name); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, team.ErrTeamNotFound
@@ -73,7 +65,9 @@ func (r *Repo) GetByName(ctx context.Context, name string) (*team.Team, error) {
 
 // GetActiveUsersInTeam returns all active users in team
 func (r *Repo) GetActiveUsersInTeam(ctx context.Context, teamName string) ([]*user.User, error) {
-	const q = `
+	q := r.tx.ExtractReq(ctx)
+
+	const qGetActiveUsers = `
 		SELECT user_id, user_name, is_active
 		FROM users
 		WHERE team_name = $1
@@ -81,7 +75,7 @@ func (r *Repo) GetActiveUsersInTeam(ctx context.Context, teamName string) ([]*us
 
 	`
 
-	rows, err := r.db.QueryContext(ctx, q, teamName)
+	rows, err := q.QueryContext(ctx, qGetActiveUsers, teamName)
 	if err != nil {
 		return nil, fmt.Errorf("get active users in team: query: %w", err)
 	}
@@ -106,14 +100,7 @@ func (r *Repo) GetActiveUsersInTeam(ctx context.Context, teamName string) ([]*us
 
 // Update modifies an existing team
 func (r *Repo) Update(ctx context.Context, t *team.Team) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("update team: begin tx: %w", err)
-	}
-
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	q := r.tx.ExtractReq(ctx)
 
 	const qCheckTeam = `
 		SELECT 1
@@ -121,7 +108,7 @@ func (r *Repo) Update(ctx context.Context, t *team.Team) error {
 		WHERE team_name = $1
 	`
 	var dummy int
-	if err := tx.QueryRowContext(ctx, qCheckTeam, t.Name).Scan(&dummy); err != nil {
+	if err := q.QueryRowContext(ctx, qCheckTeam, t.Name).Scan(&dummy); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return team.ErrTeamNotFound
 		}
@@ -139,7 +126,7 @@ func (r *Repo) Update(ctx context.Context, t *team.Team) error {
 		FROM users
 		WHERE team_name = $1
 	`
-	rows, err := tx.QueryContext(ctx, qSelectUsers, t.Name)
+	rows, err := q.QueryContext(ctx, qSelectUsers, t.Name)
 	if err != nil {
 		return fmt.Errorf("update team: select users: %w", err)
 	}
@@ -161,7 +148,7 @@ func (r *Repo) Update(ctx context.Context, t *team.Team) error {
 		DELETE FROM users
 		WHERE team_name = $1
 	`
-	if _, err := tx.ExecContext(ctx, qDeleteMembers, t.Name); err != nil {
+	if _, err := q.ExecContext(ctx, qDeleteMembers, t.Name); err != nil {
 		return fmt.Errorf("update team: delete members: %w", err)
 	}
 
@@ -170,13 +157,9 @@ func (r *Repo) Update(ctx context.Context, t *team.Team) error {
 		VALUES ($1, $2, $3, $4)
 	`
 	for _, u := range users {
-		if _, err := tx.ExecContext(ctx, qInsertMember, u.ID, u.UserName, u.IsActive, t.Name); err != nil {
+		if _, err := q.ExecContext(ctx, qInsertMember, u.ID, u.UserName, u.IsActive, t.Name); err != nil {
 			return fmt.Errorf("update team: insert member %s: %w", u.ID, err)
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("update team: commit: %w", err)
 	}
 
 	return nil
@@ -184,12 +167,14 @@ func (r *Repo) Update(ctx context.Context, t *team.Team) error {
 
 // DeleteByName deletes team by name
 func (r *Repo) DeleteByName(ctx context.Context, name string) error {
-	const q = `
+	q := r.tx.ExtractReq(ctx)
+
+	const qDeleteByName = `
 		DELETE FROM teams
 		WHERE team_name = $1
 	`
 
-	res, err := r.db.ExecContext(ctx, q, name)
+	res, err := q.ExecContext(ctx, qDeleteByName, name)
 	if err != nil {
 		return fmt.Errorf("delete by name: exec: %w", err)
 	}
@@ -206,7 +191,9 @@ func (r *Repo) DeleteByName(ctx context.Context, name string) error {
 }
 
 func (r *Repo) loadMembers(ctx context.Context, tx *sql.Tx, teamName string) ([]user.ID, error) {
-	const q = `
+	q := r.tx.ExtractReq(ctx)
+
+	const qLoadMembers = `
 		SELECT user_id
 		FROM users
 		WHERE team_name = $1
@@ -218,9 +205,9 @@ func (r *Repo) loadMembers(ctx context.Context, tx *sql.Tx, teamName string) ([]
 	)
 
 	if tx == nil {
-		rows, err = r.db.QueryContext(ctx, q, teamName)
+		rows, err = q.QueryContext(ctx, qLoadMembers, teamName)
 	} else {
-		rows, err = tx.QueryContext(ctx, q, teamName)
+		rows, err = tx.QueryContext(ctx, qLoadMembers, teamName)
 	}
 
 	if err != nil {

@@ -1,6 +1,7 @@
 package pullrequestrepo
 
 import (
+	"PRService/internal/adapters/repo/transactor"
 	"PRService/internal/domain/pullrequest"
 	"PRService/internal/domain/user"
 	"context"
@@ -10,23 +11,16 @@ import (
 )
 
 type Repo struct {
-	db *sql.DB
+	tx *transactor.Transactor
 }
 
 func New(db *sql.DB) *Repo {
-	return &Repo{db: db}
+	return &Repo{tx: transactor.NewTransactor(db)}
 }
 
 // Save saves new pull request
 func (r *Repo) Save(ctx context.Context, pr *pullrequest.PullRequest) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("save pull request: begin tx: %w", err)
-	}
-
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	q := r.tx.ExtractReq(ctx)
 
 	// 1. Save (id name author status)
 	const qPR = `
@@ -41,7 +35,7 @@ func (r *Repo) Save(ctx context.Context, pr *pullrequest.PullRequest) error {
 		authorID = nil // NULL в БД
 	}
 
-	if _, err := tx.ExecContext(ctx, qPR,
+	if _, err := q.ExecContext(ctx, qPR,
 		pr.PullRequestID,
 		pr.Name,
 		authorID,
@@ -60,13 +54,9 @@ func (r *Repo) Save(ctx context.Context, pr *pullrequest.PullRequest) error {
 		if reviewerID == "" {
 			continue
 		}
-		if _, err := tx.ExecContext(ctx, qReviewer, pr.PullRequestID, reviewerID); err != nil {
+		if _, err := q.ExecContext(ctx, qReviewer, pr.PullRequestID, reviewerID); err != nil {
 			return fmt.Errorf("save pull request: insert reviewer %s: %w", reviewerID, err)
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("save pull request: commit: %w", err)
 	}
 
 	return nil
@@ -74,8 +64,9 @@ func (r *Repo) Save(ctx context.Context, pr *pullrequest.PullRequest) error {
 
 // GetByID returns pull request by ID
 func (r *Repo) GetByID(ctx context.Context, prID pullrequest.ID) (*pullrequest.PullRequest, error) {
+	q := r.tx.ExtractReq(ctx)
 
-	const q = `
+	const qGetByID = `
 		SELECT pr_id, name, author_id, status
 		FROM pull_requests
 		WHERE pr_id = $1
@@ -86,7 +77,7 @@ func (r *Repo) GetByID(ctx context.Context, prID pullrequest.ID) (*pullrequest.P
 		authorID sql.NullString
 	)
 
-	row := r.db.QueryRowContext(ctx, q, prID)
+	row := q.QueryRowContext(ctx, qGetByID, prID)
 	if err := row.Scan(&m.PRID, &m.Name, &authorID, &m.Status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, pullrequest.ErrPullRequestNotFound
@@ -98,7 +89,7 @@ func (r *Repo) GetByID(ctx context.Context, prID pullrequest.ID) (*pullrequest.P
 		m.AuthorID = authorID.String
 	}
 
-	reviewers, err := r.loadReviewers(ctx, nil, prID)
+	reviewers, err := r.loadReviewers(ctx, prID)
 	if err != nil {
 		return nil, fmt.Errorf("get pull request by id: load reviewers: %w", err)
 	}
@@ -108,13 +99,15 @@ func (r *Repo) GetByID(ctx context.Context, prID pullrequest.ID) (*pullrequest.P
 
 // UpdateStatus changes pull request status to MERGED and returns updated PR.
 func (r *Repo) UpdateStatus(ctx context.Context, prID pullrequest.ID) (*pullrequest.PullRequest, error) {
+	q := r.tx.ExtractReq(ctx)
+
 	const qUpdateStatus = `
 		UPDATE pull_requests
 		SET status = $1
 		WHERE pr_id = $2
 	`
 
-	res, err := r.db.ExecContext(ctx, qUpdateStatus, pullrequest.StatusToString(pullrequest.MERGED), prID)
+	res, err := q.ExecContext(ctx, qUpdateStatus, pullrequest.StatusToString(pullrequest.MERGED), prID)
 	if err != nil {
 		return nil, fmt.Errorf("update pull request status: exec: %w", err)
 	}
@@ -137,13 +130,7 @@ func (r *Repo) UpdateStatus(ctx context.Context, prID pullrequest.ID) (*pullrequ
 
 // AssignReviewers sets reviewers for pull request
 func (r *Repo) AssignReviewers(ctx context.Context, prID pullrequest.ID, reviewers []user.ID) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("assign reviewers: begin tx: %w", err)
-	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	q := r.tx.ExtractReq(ctx)
 
 	// 1. Check if the pr exists
 	const qCheckPR = `
@@ -152,7 +139,7 @@ func (r *Repo) AssignReviewers(ctx context.Context, prID pullrequest.ID, reviewe
 		WHERE pr_id = $1
 	`
 	var exists int
-	if err := tx.QueryRowContext(ctx, qCheckPR, prID).Scan(&exists); err != nil {
+	if err := q.QueryRowContext(ctx, qCheckPR, prID).Scan(&exists); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return pullrequest.ErrPullRequestNotFound
 		}
@@ -164,7 +151,7 @@ func (r *Repo) AssignReviewers(ctx context.Context, prID pullrequest.ID, reviewe
 		DELETE FROM pr_reviewers
 		WHERE pr_id = $1
 	`
-	if _, err := tx.ExecContext(ctx, qDelete, prID); err != nil {
+	if _, err := q.ExecContext(ctx, qDelete, prID); err != nil {
 		return fmt.Errorf("assign reviewers: delete old reviewers: %w", err)
 	}
 
@@ -178,13 +165,9 @@ func (r *Repo) AssignReviewers(ctx context.Context, prID pullrequest.ID, reviewe
 		if reviewer == "" {
 			continue
 		}
-		if _, err := tx.ExecContext(ctx, qInsert, prID, reviewer); err != nil {
+		if _, err := q.ExecContext(ctx, qInsert, prID, reviewer); err != nil {
 			return fmt.Errorf("assign reviewers: insert reviewer %s: %w", reviewer, err)
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("assign reviewers: commit: %w", err)
 	}
 
 	return nil
@@ -192,13 +175,7 @@ func (r *Repo) AssignReviewers(ctx context.Context, prID pullrequest.ID, reviewe
 
 // ReassignReviewers replaces one reviewer with another
 func (r *Repo) ReassignReviewers(ctx context.Context, prID pullrequest.ID, oldReviewerID, newReviewerID user.ID) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("reassign reviewers: begin tx: %w", err)
-	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	q := r.tx.ExtractReq(ctx)
 
 	// 1. Check if the pr exists
 	const qCheckPR = `
@@ -207,7 +184,7 @@ func (r *Repo) ReassignReviewers(ctx context.Context, prID pullrequest.ID, oldRe
 		WHERE pr_id = $1
 	`
 	var exists int
-	if err := tx.QueryRowContext(ctx, qCheckPR, prID).Scan(&exists); err != nil {
+	if err := q.QueryRowContext(ctx, qCheckPR, prID).Scan(&exists); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return pullrequest.ErrPullRequestNotFound
 		}
@@ -219,7 +196,7 @@ func (r *Repo) ReassignReviewers(ctx context.Context, prID pullrequest.ID, oldRe
 		DELETE FROM pr_reviewers
 		WHERE pr_id = $1 AND user_id = $2
 	`
-	if _, err := tx.ExecContext(ctx, qDelete, prID, oldReviewerID); err != nil {
+	if _, err := q.ExecContext(ctx, qDelete, prID, oldReviewerID); err != nil {
 		return fmt.Errorf("reassign reviewers: delete old reviewer: %w", err)
 	}
 
@@ -229,12 +206,8 @@ func (r *Repo) ReassignReviewers(ctx context.Context, prID pullrequest.ID, oldRe
 		VALUES ($1, $2)
 		ON CONFLICT (pr_id, user_id) DO NOTHING
 	`
-	if _, err := tx.ExecContext(ctx, qInsert, prID, newReviewerID); err != nil {
+	if _, err := q.ExecContext(ctx, qInsert, prID, newReviewerID); err != nil {
 		return fmt.Errorf("reassign reviewers: insert new reviewer: %w", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("reassign reviewers: commit: %w", err)
 	}
 
 	return nil
@@ -243,7 +216,9 @@ func (r *Repo) ReassignReviewers(ctx context.Context, prID pullrequest.ID, oldRe
 // ListByUserID returns all user's pull requests
 // (author or reviewer)
 func (r *Repo) ListByUserID(ctx context.Context, userID user.ID) ([]*pullrequest.PullRequest, error) {
-	const q = `
+	q := r.tx.ExtractReq(ctx)
+
+	const qList = `
 		SELECT DISTINCT pr.pr_id, pr.name, pr.author_id, pr.status
 		FROM pull_requests pr
 		LEFT JOIN pr_reviewers prr ON prr.pr_id = pr.pr_id
@@ -251,7 +226,7 @@ func (r *Repo) ListByUserID(ctx context.Context, userID user.ID) ([]*pullrequest
 		   OR prr.user_id = $1
 	`
 
-	rows, err := r.db.QueryContext(ctx, q, userID)
+	rows, err := q.QueryContext(ctx, qList, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list by user id: query: %w", err)
 	}
@@ -276,7 +251,7 @@ func (r *Repo) ListByUserID(ctx context.Context, userID user.ID) ([]*pullrequest
 			m.AuthorID = authorID.String
 		}
 
-		reviewers, err := r.loadReviewers(ctx, nil, pullrequest.ID(m.PRID))
+		reviewers, err := r.loadReviewers(ctx, pullrequest.ID(m.PRID))
 		if err != nil {
 			return nil, fmt.Errorf("list by user id: load reviewers for pr %s: %w", m.PRID, err)
 		}
@@ -291,8 +266,10 @@ func (r *Repo) ListByUserID(ctx context.Context, userID user.ID) ([]*pullrequest
 	return result, nil
 }
 
-func (r *Repo) loadReviewers(ctx context.Context, tx *sql.Tx, prID pullrequest.ID) ([]user.ID, error) {
-	const q = `
+func (r *Repo) loadReviewers(ctx context.Context, prID pullrequest.ID) ([]user.ID, error) {
+	q := r.tx.ExtractReq(ctx)
+
+	const qLoad = `
 		SELECT user_id
 		FROM pr_reviewers
 		WHERE pr_id = $1
@@ -303,11 +280,8 @@ func (r *Repo) loadReviewers(ctx context.Context, tx *sql.Tx, prID pullrequest.I
 		err  error
 	)
 
-	if tx == nil {
-		rows, err = r.db.QueryContext(ctx, q, prID)
-	} else {
-		rows, err = tx.QueryContext(ctx, q, prID)
-	}
+	rows, err = q.QueryContext(ctx, qLoad, prID)
+
 	if err != nil {
 		return nil, fmt.Errorf("load reviewers: query: %w", err)
 	}

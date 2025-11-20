@@ -7,6 +7,7 @@ import (
 	userhandler "PRService/internal/adapters/http/user/handler"
 	pullrequestrepo "PRService/internal/adapters/repo/pullrequest"
 	teamrepo "PRService/internal/adapters/repo/team"
+	"PRService/internal/adapters/repo/transactor"
 	userrepo "PRService/internal/adapters/repo/user"
 	"PRService/internal/app"
 	pullrequest_usecase "PRService/internal/usecase/pullrequest"
@@ -64,7 +65,9 @@ func main() {
 	userSvc := user_usecase.New(userRepo)
 	teamSvc := team_usecase.New(teamRepo)
 	pullrequestSvc := pullrequest_usecase.New(pullrequestRepo)
-	svc := app.NewServices(userSvc, teamSvc, pullrequestSvc)
+
+
+	svc := app.NewServices(userSvc, teamSvc, pullrequestSvc, transactor.NewTransactor(db))
 
 	// Handlers
 	userHandler := userhandler.NewHandler(svc, logger)

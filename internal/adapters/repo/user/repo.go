@@ -1,6 +1,7 @@
 package userrepo
 
 import (
+	"PRService/internal/adapters/repo/transactor"
 	"PRService/internal/domain/user"
 	"context"
 	"database/sql"
@@ -11,16 +12,18 @@ import (
 )
 
 type Repo struct {
-	db *sql.DB
+	tx *transactor.Transactor
 }
 
 func New(db *sql.DB) *Repo {
-	return &Repo{db}
+	return &Repo{tx: transactor.NewTransactor(db)}
 }
 
 // Save saves new user. if exists -> update
 func (r *Repo) Save(ctx context.Context, u *user.User) error {
-	const q = `INSERT INTO users (user_id, user_name, team_name, is_active)
+	q := r.tx.ExtractReq(ctx)
+
+	const qSave = `INSERT INTO users (user_id, user_name, team_name, is_active)
 				VALUES ($1, $2, $3, $4)
 				ON CONFLICT (user_id) DO UPDATE
 				SET user_name = EXCLUDED.user_name,
@@ -28,7 +31,7 @@ func (r *Repo) Save(ctx context.Context, u *user.User) error {
 					is_active = EXCLUDED.is_active;
 			`
 
-	_, err := r.db.ExecContext(ctx, q, u.UserID, u.Name, u.TeamName, u.IsActive)
+	_, err := q.ExecContext(ctx, qSave, u.UserID, u.Name, u.TeamName, u.IsActive)
 	if err != nil {
 		return fmt.Errorf("user repo: save: user: %s: %w", u.UserID, err)
 	}
@@ -38,12 +41,14 @@ func (r *Repo) Save(ctx context.Context, u *user.User) error {
 
 // GetByID returns user by ID
 func (r *Repo) GetByID(ctx context.Context, id user.ID) (*user.User, error) {
-	const q = `
+	q := r.tx.ExtractReq(ctx)
+
+	const qGetByID = `
 		SELECT user_id, user_name, team_name, is_active
 		FROM users
 		WHERE user_id = $1
 		`
-	row := r.db.QueryRowContext(ctx, q, id)
+	row := q.QueryRowContext(ctx, qGetByID, id)
 
 	var u UserModel
 	if err := row.Scan(&u.UserID, &u.Name, &u.TeamName, &u.IsActive); err != nil {
@@ -59,7 +64,9 @@ func (r *Repo) GetByID(ctx context.Context, id user.ID) (*user.User, error) {
 
 // GetByIDs returns users by IDs
 func (r *Repo) GetByIDs(ctx context.Context, ids []user.ID) ([]*user.User, error) {
-	const q = `
+	q := r.tx.ExtractReq(ctx)
+
+	const qGetByIDs = `
 		SELECT user_id, user_name, team_name, is_active
 		FROM users
 		WHERE user_id = ANY($1)
@@ -74,7 +81,7 @@ func (r *Repo) GetByIDs(ctx context.Context, ids []user.ID) ([]*user.User, error
 		strIDs[i] = string(id)
 	}
 
-	rows, err := r.db.QueryContext(ctx, q, pq.Array(strIDs))
+	rows, err := q.QueryContext(ctx, qGetByIDs, pq.Array(strIDs))
 	if err != nil {
 		return nil, fmt.Errorf("get users by ids: query: %w", err)
 	}
@@ -98,7 +105,9 @@ func (r *Repo) GetByIDs(ctx context.Context, ids []user.ID) ([]*user.User, error
 
 // UpdateActive updates user's active status
 func (r *Repo) UpdateActive(ctx context.Context, id user.ID, isActive bool) (*user.User, error) {
-	const q = `
+	q := r.tx.ExtractReq(ctx)
+
+	const qUpdate = `
         UPDATE users
         SET is_active = $1
         WHERE user_id = $2
@@ -106,7 +115,7 @@ func (r *Repo) UpdateActive(ctx context.Context, id user.ID, isActive bool) (*us
     `
 
 	var u user.User
-	err := r.db.QueryRowContext(ctx, q, isActive, id).Scan(
+	err := q.QueryRowContext(ctx, qUpdate, isActive, id).Scan(
 		&u.Name,
 	)
 	if err != nil {
@@ -121,14 +130,16 @@ func (r *Repo) UpdateActive(ctx context.Context, id user.ID, isActive bool) (*us
 
 // DeleteByID deletes user by id
 func (r *Repo) DeleteByID(ctx context.Context, id user.ID) error {
-	const q = `
+	q := r.tx.ExtractReq(ctx)
+
+	const qDelete = `
 		DELETE FROM users
 		WHERE user_id = $1
 	`
 
 	// Можно также как и в Update добавить проверку затронутых строк.
 	// Тогда можно будет кидать warning, что юзера не было
-	_, err := r.db.ExecContext(ctx, q, id)
+	_, err := q.ExecContext(ctx, qDelete, id)
 	if err != nil {
 		return fmt.Errorf("delete by id: user: %s: %w", id, err)
 	}
