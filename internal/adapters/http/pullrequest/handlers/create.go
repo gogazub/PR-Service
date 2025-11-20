@@ -6,7 +6,7 @@ import (
 	"PRService/internal/domain/pullrequest"
 	"PRService/internal/domain/team"
 	"PRService/internal/domain/user"
-	pullrequest_usecase "PRService/internal/usecase/pullrequest"
+	pullrequestusecase "PRService/internal/usecase/pullrequest"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -39,7 +39,7 @@ func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	cmd := pullrequest_usecase.CreatePRCommand{
+	cmd := pullrequestusecase.CreatePRCommand{
 		ID:     req.PullRequestID,
 		Name:   req.PullRequestName,
 		Author: user.ID(req.AuthorID),

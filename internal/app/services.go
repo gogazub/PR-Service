@@ -5,9 +5,9 @@ import (
 	"PRService/internal/domain/pullrequest"
 	"PRService/internal/domain/team"
 	"PRService/internal/domain/user"
-	pullrequest_usecase "PRService/internal/usecase/pullrequest"
-	team_usecase "PRService/internal/usecase/team"
-	user_usecase "PRService/internal/usecase/user"
+	pullrequestusecase "PRService/internal/usecase/pullrequest"
+	teamusecase "PRService/internal/usecase/team"
+	userusecase "PRService/internal/usecase/user"
 	"context"
 	"fmt"
 	"math/rand"
@@ -16,22 +16,22 @@ import (
 
 // Агрегированные в одну сущность сервисы. Точка взаимодействия с приложение.
 type Services struct {
-	User        user_usecase.Service
-	Team        team_usecase.Service
-	PullRequest pullrequest_usecase.Service
+	User        userusecase.Service
+	Team        teamusecase.Service
+	PullRequest pullrequestusecase.Service
 	tm          *transactor.Transactor
 }
 
 func NewServices(
-	user user_usecase.Service,
-	team team_usecase.Service,
-	pr pullrequest_usecase.Service,
+	user userusecase.Service,
+	team teamusecase.Service,
+	pr pullrequestusecase.Service,
 	tm *transactor.Transactor,
 ) *Services {
 	return &Services{User: user, Team: team, PullRequest: pr, tm: tm}
 }
 
-func (svc *Services) CreateTeam(ctx context.Context, cmd team_usecase.CreateTeamAndUsersCommand) (*team.Team, []*user.User, error) {
+func (svc *Services) CreateTeam(ctx context.Context, cmd teamusecase.CreateTeamAndUsersCommand) (*team.Team, []*user.User, error) {
 	var (
 		t     *team.Team
 		users []*user.User
@@ -43,7 +43,7 @@ func (svc *Services) CreateTeam(ctx context.Context, cmd team_usecase.CreateTeam
 		for _, u := range cmd.Members {
 			ids = append(ids, u.UserID)
 		}
-		createTeamCmd := team_usecase.CreateTeamCommand{
+		createTeamCmd := teamusecase.CreateTeamCommand{
 			Name:    cmd.Name,
 			Members: ids,
 		}
@@ -72,7 +72,7 @@ func (svc *Services) CreateTeam(ctx context.Context, cmd team_usecase.CreateTeam
 	return t, users, nil
 }
 
-func (svc *Services) CreatePR(ctx context.Context, cmd pullrequest_usecase.CreatePRCommand) (*pullrequest.PullRequest, error) {
+func (svc *Services) CreatePR(ctx context.Context, cmd pullrequestusecase.CreatePRCommand) (*pullrequest.PullRequest, error) {
 
 	var pr *pullrequest.PullRequest
 
@@ -142,7 +142,7 @@ type ReassignReviewerCommand struct {
 	NewReviewerID user.ID // будет заполнен в сервисе
 }
 
-func (svc *Services) ReassignReviewer(ctx context.Context, cmd pullrequest_usecase.ReassignReviewerCommand) (*pullrequest.PullRequest, user.ID, error) {
+func (svc *Services) ReassignReviewer(ctx context.Context, cmd pullrequestusecase.ReassignReviewerCommand) (*pullrequest.PullRequest, user.ID, error) {
 
 	var pr *pullrequest.PullRequest
 	var uid user.ID

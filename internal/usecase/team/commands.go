@@ -1,4 +1,4 @@
-package team_usecase
+package teamusecase
 
 import (
 	"PRService/internal/domain/user"

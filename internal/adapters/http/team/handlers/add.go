@@ -4,7 +4,7 @@ import (
 	httperror "PRService/internal/adapters/http/error"
 	teamhttp "PRService/internal/adapters/http/team"
 	"PRService/internal/domain/team"
-	team_usecase "PRService/internal/usecase/team"
+	teamusecase "PRService/internal/usecase/team"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -30,7 +30,7 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd := team_usecase.CreateTeamAndUsersCommand{
+	cmd := teamusecase.CreateTeamAndUsersCommand{
 		Name:    req.TeamName,
 		Members: UsersFromMembers(req.Members, req.TeamName),
 	}

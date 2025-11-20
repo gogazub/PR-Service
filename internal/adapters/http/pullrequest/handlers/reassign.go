@@ -5,7 +5,7 @@ import (
 	pullrequesthttp "PRService/internal/adapters/http/pullrequest"
 	"PRService/internal/domain/pullrequest"
 	"PRService/internal/domain/user"
-	pullrequest_usecase "PRService/internal/usecase/pullrequest"
+	pullrequestusecase "PRService/internal/usecase/pullrequest"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -37,7 +37,7 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd := pullrequest_usecase.ReassignReviewerCommand{
+	cmd := pullrequestusecase.ReassignReviewerCommand{
 		PullRequestID: pullrequest.ID(req.PullRequestID),
 		OldReviewerID: user.ID(req.OldUserID),
 	}

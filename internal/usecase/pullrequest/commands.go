@@ -1,4 +1,4 @@
-package pullrequest_usecase
+package pullrequestusecase
 
 import (
 	"PRService/internal/domain/pullrequest"

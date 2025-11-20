@@ -4,7 +4,7 @@ import (
 	httperror "PRService/internal/adapters/http/error"
 	pullrequesthttp "PRService/internal/adapters/http/pullrequest"
 	"PRService/internal/domain/pullrequest"
-	pullrequest_usecase "PRService/internal/usecase/pullrequest"
+	pullrequestusecase "PRService/internal/usecase/pullrequest"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -38,7 +38,7 @@ func (h *Handler) MergePullRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	cmd := pullrequest_usecase.UpdateStatusCommand{
+	cmd := pullrequestusecase.UpdateStatusCommand{
 		PullRequestID: pullrequest.ID(req.PullRequestID),
 	}
 

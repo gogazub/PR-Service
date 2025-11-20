@@ -11,15 +11,14 @@ import (
 	"PRService/internal/adapters/repo/transactor"
 	userrepo "PRService/internal/adapters/repo/user"
 	"PRService/internal/app"
-	pullrequest_usecase "PRService/internal/usecase/pullrequest"
-	team_usecase "PRService/internal/usecase/team"
-	user_usecase "PRService/internal/usecase/user"
+	pullrequestusecase "PRService/internal/usecase/pullrequest"
+	teamusecase "PRService/internal/usecase/team"
+	userusecase "PRService/internal/usecase/user"
 	"PRService/pkg/logger"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -30,7 +29,7 @@ import (
 )
 
 func main() {
-	
+
 	// 0. Init Logger
 	logger, err := logger.New()
 	if err != nil {
@@ -80,9 +79,9 @@ func main() {
 	pullrequestRepo := pullrequestrepo.New(db)
 
 	// Services
-	userSvc := user_usecase.New(userRepo)
-	teamSvc := team_usecase.New(teamRepo)
-	pullrequestSvc := pullrequest_usecase.New(pullrequestRepo)
+	userSvc := userusecase.New(userRepo)
+	teamSvc := teamusecase.New(teamRepo)
+	pullrequestSvc := pullrequestusecase.New(pullrequestRepo)
 
 	svc := app.NewServices(userSvc, teamSvc, pullrequestSvc, transactor.NewTransactor(db))
 
@@ -148,23 +147,21 @@ func main() {
 }
 
 type healthResponse struct {
-    Status  string `json:"status"`
-    Message string `json:"message"`
-    Time    string `json:"timestamp"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Time    string `json:"timestamp"`
 }
 
-func HealthHandler(w http.ResponseWriter, r *http.Request) {
-    log.Printf("Health check from %s", r.RemoteAddr)
-    
-    response := healthResponse{
-        Status:  "healthy",
-        Message: "Server is working properly",
-        Time:    time.Now().UTC().Format(time.RFC3339),
-    }
-    
-    w.Header().Set("Content-Type", "application/json")
-    
-    if err := json.NewEncoder(w).Encode(response); err != nil {
+func HealthHandler(w http.ResponseWriter, _ *http.Request) {
+	response := healthResponse{
+		Status:  "healthy",
+		Message: "Server is working properly",
+		Time:    time.Now().UTC().Format(time.RFC3339),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		httperror.WriteErrorResponse(w, http.StatusInternalServerError, httperror.ErrorCodeInternal, "health check failed")
 	}
 }

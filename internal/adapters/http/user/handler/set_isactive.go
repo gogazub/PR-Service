@@ -4,7 +4,7 @@ import (
 	httperror "PRService/internal/adapters/http/error"
 	userhttp "PRService/internal/adapters/http/user"
 	"PRService/internal/domain/user"
-	user_usecase "PRService/internal/usecase/user"
+	userusecase "PRService/internal/usecase/user"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -37,7 +37,7 @@ func (h *Handler) SetIsActive(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// 2. Domain command
-	cmd := user_usecase.UpdateActiveCommand{
+	cmd := userusecase.UpdateActiveCommand{
 		UserID:   user.ID(req.UserID),
 		IsActive: req.IsActive,
 	}
