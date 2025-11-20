@@ -56,6 +56,9 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to open postgres", "error", err)
 	}
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	// Ping DB
 	if err := db.Ping(); err != nil {

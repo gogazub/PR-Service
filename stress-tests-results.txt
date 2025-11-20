@@ -1,0 +1,169 @@
+hey -n 10000 -c 100 http://localhost:8080/health
+
+Summary:
+  Total:        0.5904 secs
+  Slowest:      0.0416 secs
+  Fastest:      0.0008 secs
+  Average:      0.0057 secs
+  Requests/sec: 16936.5675
+  
+  Total data:   950000 bytes
+  Size/request: 95 bytes
+
+Response time histogram:
+  0.001 [1]     |
+  0.005 [4332]  |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  0.009 [4888]  |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  0.013 [587]   |■■■■■
+  0.017 [103]   |■
+  0.021 [46]    |
+  0.025 [0]     |
+  0.029 [0]     |
+  0.033 [13]    |
+  0.037 [0]     |
+  0.042 [30]    |
+
+
+Latency distribution:
+  10% in 0.0031 secs
+  25% in 0.0041 secs
+  50% in 0.0052 secs
+  75% in 0.0066 secs
+  90% in 0.0084 secs
+  95% in 0.0101 secs
+  99% in 0.0166 secs
+
+Details (average, fastest, slowest):
+  DNS+dialup:   0.0001 secs, 0.0008 secs, 0.0416 secs
+  DNS-lookup:   0.0000 secs, 0.0000 secs, 0.0122 secs
+  req write:    0.0000 secs, 0.0000 secs, 0.0124 secs
+  resp wait:    0.0052 secs, 0.0007 secs, 0.0313 secs
+  resp read:    0.0003 secs, 0.0000 secs, 0.0072 secs
+
+Status code distribution:
+  [200] 10000 responses
+
+
+
+hey -n 5000 -c 50 "http://localhost:8080/users/getReview?user_id=load_u1"
+
+Summary:
+  Total:        4.2569 secs
+  Slowest:      0.2284 secs
+  Fastest:      0.0016 secs
+  Average:      0.0407 secs
+  Requests/sec: 1174.5677
+  
+  Total data:   215000 bytes
+  Size/request: 43 bytes
+
+Response time histogram:
+  0.002 [1]     |
+  0.024 [2388]  |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  0.047 [587]   |■■■■■■■■■■
+  0.070 [947]   |■■■■■■■■■■■■■■■■
+  0.092 [714]   |■■■■■■■■■■■■
+  0.115 [236]   |■■■■
+  0.138 [75]    |■
+  0.160 [21]    |
+  0.183 [16]    |
+  0.206 [8]     |
+  0.228 [7]     |
+
+
+Latency distribution:
+  10% in 0.0067 secs
+  25% in 0.0114 secs
+  50% in 0.0272 secs
+  75% in 0.0664 secs
+  90% in 0.0856 secs
+  95% in 0.0997 secs
+  99% in 0.1400 secs
+
+Details (average, fastest, slowest):
+  DNS+dialup:   0.0000 secs, 0.0016 secs, 0.2284 secs
+  DNS-lookup:   0.0000 secs, 0.0000 secs, 0.0027 secs
+  req write:    0.0000 secs, 0.0000 secs, 0.0051 secs
+  resp wait:    0.0405 secs, 0.0016 secs, 0.2283 secs
+  resp read:    0.0001 secs, 0.0000 secs, 0.0075 secs
+
+Status code distribution:
+  [200] 5000 responses
+
+
+
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: /src/load_test.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 20 max VUs, 40s max duration (incl. graceful stop):
+              * create_prs: 20 looping VUs for 10s (gracefulStop: 30s)
+
+
+running (01.0s), 20/20 VUs, 606 complete and 0 interrupted iterations
+create_prs   [  10% ] 20 VUs  01.0s/10s
+
+running (02.0s), 20/20 VUs, 1268 complete and 0 interrupted iterations
+create_prs   [  20% ] 20 VUs  02.0s/10s
+
+running (03.0s), 20/20 VUs, 1933 complete and 0 interrupted iterations
+create_prs   [  30% ] 20 VUs  03.0s/10s
+
+running (04.0s), 20/20 VUs, 2582 complete and 0 interrupted iterations
+create_prs   [  40% ] 20 VUs  04.0s/10s
+
+running (05.0s), 20/20 VUs, 3244 complete and 0 interrupted iterations
+create_prs   [  50% ] 20 VUs  05.0s/10s
+
+running (06.0s), 20/20 VUs, 3924 complete and 0 interrupted iterations
+create_prs   [  60% ] 20 VUs  06.0s/10s
+
+running (07.0s), 20/20 VUs, 4698 complete and 0 interrupted iterations
+create_prs   [  70% ] 20 VUs  07.0s/10s
+
+running (08.0s), 20/20 VUs, 5610 complete and 0 interrupted iterations
+create_prs   [  80% ] 20 VUs  08.0s/10s
+
+running (09.0s), 20/20 VUs, 6600 complete and 0 interrupted iterations
+create_prs   [  90% ] 20 VUs  09.0s/10s
+
+running (10.0s), 20/20 VUs, 7506 complete and 0 interrupted iterations
+create_prs   [ 100% ] 20 VUs  10.0s/10s
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 7555    752.627236/s
+    checks_succeeded...: 100.00% 7555 out of 7555
+    checks_failed......: 0.00%   0 out of 7555
+
+    ✓ is status 201
+
+    HTTP
+    http_req_duration..............: avg=26.21ms min=6.57ms med=24.1ms  max=74.02ms p(90)=41.48ms p(95)=45.23ms
+      { expected_response:true }...: avg=26.21ms min=6.57ms med=24.1ms  max=74.02ms p(90)=41.48ms p(95)=45.23ms
+    http_req_failed................: 0.00%  0 out of 7556
+    http_reqs......................: 7556   752.726856/s
+
+    EXECUTION
+    iteration_duration.............: avg=26.47ms min=6.74ms med=24.33ms max=74.14ms p(90)=41.81ms p(95)=45.56ms
+    iterations.....................: 7555   752.627236/s
+    vus............................: 20     min=20        max=20
+    vus_max........................: 20     min=20        max=20
+
+    NETWORK
+    data_received..................: 2.3 MB 232 kB/s
+    data_sent......................: 2.0 MB 198 kB/s
+
+
+
+
+running (10.0s), 00/20 VUs, 7555 complete and 0 interrupted iterations
+create_prs ✓ [ 100% ] 20 VUs  10s
